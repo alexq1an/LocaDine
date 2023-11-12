@@ -32,9 +32,9 @@ class LoginActivity : AppCompatActivity() {
         loginButton.setOnClickListener {
             val emailText = email.text.toString()
             val passwordText = password.text.toString()
-            if (emailText.isEmpty()) {
+            if (emailText.isBlank()) {
                 Toast.makeText(this, "Email cannot be empty", Toast.LENGTH_SHORT).show()
-            } else if (passwordText.isEmpty()) {
+            } else if (passwordText.isBlank()) {
                 Toast.makeText(this, "Password cannot be empty", Toast.LENGTH_SHORT).show()
             } else {
                 login(emailText, passwordText)
