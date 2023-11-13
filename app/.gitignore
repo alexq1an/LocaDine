@@ -26,3 +26,6 @@ captures/
 *.iml
 *.iws
 *.ipr
+
+# Firebase
+google-services.json
