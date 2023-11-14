@@ -15,6 +15,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var goToReviewsButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        println("Hello")
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
