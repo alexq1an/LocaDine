@@ -45,11 +45,11 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
         logoutButton.setOnClickListener {
             auth.signOut()
             Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this, LoginActivity::class.java))
+            //startActivity(Intent(this, LoginActivity::class.java))
         }
 
         goToReviewsButton.setOnClickListener {
-            startActivity(Intent(this, ReviewsActivity::class.java))
+            //startActivity(Intent(this, ReviewsActivity::class.java))
         }
 
         //----------------------------------------------
@@ -70,6 +70,7 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
         ) {
             // Have no GPS Access ask then return
             Util.getGPSPermission(this)
+            println("DBG: User Has No Permission for GPS")
             return
         }
         mapViewModel.setLocationCallBack(this)
@@ -77,7 +78,7 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
     }
 
     override fun onLocationGet(location: LatLng) {
-        println("RDB: 222 $location")
+        println("DBG: Current Location: $location")
     }
 
 }
