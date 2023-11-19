@@ -26,6 +26,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
     private lateinit var  markerOptions: MarkerOptions
     private lateinit var locationManager: LocationManager
     private lateinit var findRestaurantButton: Button
+    private lateinit var mapSwitch: Button
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,14 +50,26 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
 
         }
 
+        mapSwitch = binding.mapSwitch
+        mapSwitch.setOnClickListener(){
+            if(mMap.mapType == GoogleMap.MAP_TYPE_NORMAL){
+                mMap.mapType= GoogleMap.MAP_TYPE_SATELLITE
+            }else{
+                mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
+            }
+
+        }
+
+
 
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
+        if (mMap.mapType == null) {
+            mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
+        }
 
-
-        mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
         markerOptions = MarkerOptions()
 
         initLocationManager() // initialize map
