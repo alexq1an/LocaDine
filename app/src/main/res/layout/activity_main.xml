@@ -15,6 +15,12 @@
         android:gravity="center" />
 
     <Button
+        android:id="@+id/map_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Map" />
+
+    <Button
         android:id="@+id/main_logout_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

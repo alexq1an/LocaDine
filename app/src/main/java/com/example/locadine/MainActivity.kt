@@ -20,6 +20,7 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
     private lateinit var userInfo: TextView
     private lateinit var auth: FirebaseAuth
     private lateinit var goToReviewsButton: Button
+    private lateinit var mapButton: Button
 
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var mapViewModel: MapViewModel
@@ -34,12 +35,18 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
         logoutButton = findViewById(R.id.main_logout_button)
         userInfo = findViewById(R.id.user_info)
         goToReviewsButton = findViewById(R.id.go_to_reviews)
+        mapButton = findViewById(R.id.map_button)
+
 
         val isLoggedIn = auth.currentUser != null
         if (isLoggedIn) {
             userInfo.text = auth.currentUser!!.email
         } else {
             startActivity(Intent(this, LoginActivity::class.java))
+        }
+
+        mapButton.setOnClickListener(){
+            startActivity(Intent(this, MapsActivity::class.java))
         }
 
         logoutButton.setOnClickListener {
