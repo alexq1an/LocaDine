@@ -56,8 +56,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener, 
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        // Permission check
-        Util.getGPSPermission(this)
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
 
         findRestaurantButton = binding.findButton
@@ -96,14 +94,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener, 
         //initLocationManager() // initialize map
         getCurrentLocation()
 
-        
-        
         // Below is for testing function should only be called when necessary
         locationUpdates()
     }
 
     private fun getCurrentLocation() {
-
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -112,8 +107,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener, 
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            // Have no GPS Access ask then return
-            Util.getGPSPermission(this)
             println("DBG: User Has No Permission for GPS")
             return
         }
@@ -168,7 +161,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener, 
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             // Have no GPS Access ask then return
-            Util.getGPSPermission(this)
             println("DBG: User Has No Permission for GPS")
             return
         }

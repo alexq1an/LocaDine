@@ -32,4 +32,16 @@
         android:layout_height="wrap_content"
         android:text="Reviews" />
 
+    <Button
+        android:id="@+id/go_to_chatbot_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Chatbot" />
+
+    <Button
+        android:id="@+id/notification_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Notification" />
+
 </LinearLayout>
