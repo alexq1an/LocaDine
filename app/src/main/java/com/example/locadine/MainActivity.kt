@@ -14,6 +14,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var goToReviewsButton: Button
     private lateinit var mapButton: Button
+    private lateinit var goToChatbotButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,7 +25,7 @@ class MainActivity : AppCompatActivity() {
         userInfo = findViewById(R.id.user_info)
         goToReviewsButton = findViewById(R.id.go_to_reviews)
         mapButton = findViewById(R.id.map_button)
-
+        goToChatbotButton = findViewById(R.id.go_to_chatbot_button)
 
         val isLoggedIn = auth.currentUser != null
         if (isLoggedIn) {
@@ -45,6 +46,10 @@ class MainActivity : AppCompatActivity() {
 
         goToReviewsButton.setOnClickListener {
             startActivity(Intent(this, ReviewsActivity::class.java))
+        }
+
+        goToChatbotButton.setOnClickListener {
+            startActivity(Intent(this, ChatbotActivity::class.java))
         }
     }
 }
