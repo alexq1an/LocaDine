@@ -1,17 +1,12 @@
 package com.example.locadine
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
 import com.example.locadine.ViewModels.MapViewModel
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 
@@ -22,8 +17,7 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
     private lateinit var goToReviewsButton: Button
     private lateinit var mapButton: Button
 
-    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
-    private lateinit var mapViewModel: MapViewModel
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,30 +53,9 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
             //startActivity(Intent(this, ReviewsActivity::class.java))
         }
 
-        //----------------------------------------------
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
-
-        mapViewModel = MapViewModel(fusedLocationProviderClient)
-        getCurrentLocation()
     }
 
-    private fun getCurrentLocation() {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            // Have no GPS Access ask then return
-            Util.getGPSPermission(this)
-            println("DBG: User Has No Permission for GPS")
-            return
-        }
-        mapViewModel.setLocationCallBack(this)
-        mapViewModel.findCurrentLocation()
-    }
+
 
     override fun onLocationGet(location: LatLng) {
         println("DBG: Current Location: $location")
