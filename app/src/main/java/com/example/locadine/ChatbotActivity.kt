@@ -119,7 +119,7 @@ class ChatbotActivity : AppCompatActivity() {
     }
 
     private fun getPrePrompt(): String {
-        return getChatHistory() + "Create an answer that uses 150 tokens or less\n\n"
+        return getChatHistory() + "Create an answer that uses 50 tokens or less\n\n"
     }
 
     private fun getChatHistory(): String {

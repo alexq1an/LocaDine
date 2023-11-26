@@ -40,9 +40,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener {
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        // Permission check
-        Util.checkPermissions(this)
-
         findRestaurantButton = binding.findButton
         findRestaurantButton.setOnClickListener(){
             // TODO future find service
