@@ -3,11 +3,13 @@ package com.example.locadine
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
-import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.google.android.gms.maps.model.LatLng
+import android.os.Build
 
 object Util {
+
     fun checkPermissions(activity: Activity?) {
         if (Build.VERSION.SDK_INT < 23) {
             return
@@ -25,9 +27,18 @@ object Util {
         if (permissionsNotGranted.isNotEmpty()) {
             ActivityCompat.requestPermissions(
                 activity!!,
-                permissionsNotGranted.toTypedArray(),
+                permissionsToRequest,
                 0
             )
         }
+    }
+
+    fun getRoutingUrl(start: LatLng, dest: LatLng): String {
+        val url = "https://maps.googleapis.com/maps/api/directions/json"
+        val destString = "destination=${dest.latitude},${dest.longitude}"
+        val startString = "origin=${start.latitude},${start.longitude}"
+        val apiKey = "key=${BuildConfig.MAPS_API_KEY}"
+
+        return "$url?$destString&$startString&$apiKey"
     }
 }

@@ -9,11 +9,13 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import com.example.locadine.ViewModels.MapViewModel
+import com.google.android.gms.maps.model.LatLng
 import com.example.locadine.services.NotificationService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.messaging.FirebaseMessaging
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
     private lateinit var logoutButton: Button
     private lateinit var userInfo: TextView
     private lateinit var auth: FirebaseAuth
@@ -57,11 +59,11 @@ class MainActivity : AppCompatActivity() {
         logoutButton.setOnClickListener {
             auth.signOut()
             Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this, LoginActivity::class.java))
+            //startActivity(Intent(this, LoginActivity::class.java))
         }
 
         goToReviewsButton.setOnClickListener {
-            startActivity(Intent(this, ReviewsActivity::class.java))
+            //startActivity(Intent(this, ReviewsActivity::class.java))
         }
 
         goToChatbotButton.setOnClickListener {
@@ -83,4 +85,9 @@ class MainActivity : AppCompatActivity() {
 
         FirebaseMessaging.getInstance().subscribeToTopic(FIREBASE_NOTIFICATIONS_TOPIC)
     }
+
+    override fun onLocationGet(location: LatLng) {
+        println("DBG: Current Location: $location")
+    }
+
 }
