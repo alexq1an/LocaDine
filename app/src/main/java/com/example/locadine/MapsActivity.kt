@@ -56,6 +56,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         findRestaurantButton = binding.findButton
         findRestaurantButton.setOnClickListener(){
             // TODO future find service
+            //The code below is for testing and should be removed later
+            if (currLocation !=null) {
+                getRoute(currLocation!!, LatLng(49.16319821289473, -122.63795292655163))
+            }
         }
 
         mapSwitch = binding.mapSwitch
@@ -83,6 +87,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         
         mMap.setOnMarkerClickListener(this)
         getCurrentLocation()
+
+        //code below is for testing should be removed
+        locationUpdates()
     }
 
     //gets the current location of device Once
