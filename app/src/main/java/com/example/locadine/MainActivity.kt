@@ -14,6 +14,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var goToReviewsButton: Button
     private lateinit var mapButton: Button
+    private lateinit var restaurantButton : Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,6 +25,7 @@ class MainActivity : AppCompatActivity() {
         userInfo = findViewById(R.id.user_info)
         goToReviewsButton = findViewById(R.id.go_to_reviews)
         mapButton = findViewById(R.id.map_button)
+        restaurantButton = findViewById(R.id.go_to_restaurants)
 
 
         val isLoggedIn = auth.currentUser != null
@@ -45,6 +47,10 @@ class MainActivity : AppCompatActivity() {
 
         goToReviewsButton.setOnClickListener {
             startActivity(Intent(this, ReviewsActivity::class.java))
+        }
+
+        restaurantButton.setOnClickListener(){
+            startActivity(Intent(this, RestaurantPageActivity::class.java))
         }
     }
 }
