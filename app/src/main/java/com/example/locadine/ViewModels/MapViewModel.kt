@@ -61,6 +61,10 @@ class MapViewModel(private val fusedLocationProviderClient: FusedLocationProvide
         fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationUpdateCallback, null)
     }
 
+    fun stopLocationUpdates() {
+        fusedLocationProviderClient.removeLocationUpdates(locationUpdateCallback)
+    }
+
     fun getRoutes(url: String) {
         val client = OkHttpClient()
         val request = Request.Builder().url(url).build()

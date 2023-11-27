@@ -3,13 +3,9 @@ package com.example.locadine
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.example.locadine.ViewModels.MapViewModel
 
@@ -28,7 +24,7 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener, MapViewModel.LocationCallBack,
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.LocationCallBack,
     GoogleMap.OnMarkerClickListener {
 
     private lateinit var mMap: GoogleMap
@@ -36,7 +32,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener, 
 
     private lateinit var markerOptions: MarkerOptions
     private lateinit var polylineOptions: PolylineOptions
-    private lateinit var locationManager: LocationManager
     private lateinit var findRestaurantButton: Button
     private lateinit var mapSwitch: Button
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
@@ -61,10 +56,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener, 
         findRestaurantButton = binding.findButton
         findRestaurantButton.setOnClickListener(){
             // TODO future find service
-            //For testing the code below should only be called when necessary
-            if (currLocation != null) {
-                getRoute(currLocation!!, LatLng(49.11315449002092, -122.66671572319954))
-            }
         }
 
         mapSwitch = binding.mapSwitch
@@ -91,13 +82,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener, 
         polylineOptions = PolylineOptions()
         
         mMap.setOnMarkerClickListener(this)
-        //initLocationManager() // initialize map
         getCurrentLocation()
-
-        // Below is for testing function should only be called when necessary
-        locationUpdates()
     }
 
+    //gets the current location of device Once
     private fun getCurrentLocation() {
         if (ActivityCompat.checkSelfPermission(
                 this,
@@ -115,42 +103,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener, 
         mapViewModel.findCurrentLocation()
     }
 
-    fun initLocationManager() {
-        try { // initialize steps
-            locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
-            if(!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
-                return
-            }
-            val location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-            if (location != null)
-                onLocationChanged(location)
-            // update 1 second at a time
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0f, this)
-
-        } catch (e: SecurityException) { // catch no location permission exception
-            Toast.makeText(this, "No Location permission", Toast.LENGTH_SHORT).show()
-        }
-
-    }
 
     // initialize marker for each iteration
     private var lastMarker: Marker? = null
-    override fun onLocationChanged(location: Location) {
-        val lat = location.latitude
-        val lng = location.longitude
-        val latLng = LatLng(lat, lng)
-        // update camera position
-        val cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 17f)
-        mMap.animateCamera(cameraUpdate)
 
-        lastMarker?.remove()
-        markerOptions.position(latLng)
-        // keep a reference to the last marker
-        lastMarker = mMap.addMarker(markerOptions)
-
-
-    }
-
+    // This Tracks the device in intervals and marks the location on the map
     fun locationUpdates() {
         if (ActivityCompat.checkSelfPermission(
                 this,
@@ -179,8 +136,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener, 
 
     override fun onDestroy() {
         super.onDestroy()
-        if (locationManager != null)
-            locationManager.removeUpdates(this)
+        if (fusedLocationProviderClient != null) {
+            // Stops tracking the device
+            mapViewModel.stopLocationUpdates()
+        }
     }
 
     override fun onLocationGet(location: LatLng) {
@@ -193,6 +152,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener, 
         currLocation = location
     }
 
+
+    // Takes a starting LatLng and destination LatLng then displays the route on the map
     private fun getRoute(start: LatLng, destination: LatLng) {
         // Can show How long to get to destination in minutes and distance
         val url = Util.getRoutingUrl(
@@ -222,6 +183,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, LocationListener, 
         }
     }
 
+    //Returns the LatLng of the clicked marker, can change to do something else
     override fun onMarkerClick(marker: Marker): Boolean {
         val position = marker.position
         println("dbg: clicked!! $position")

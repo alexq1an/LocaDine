@@ -37,7 +37,7 @@ object Util {
         val url = "https://maps.googleapis.com/maps/api/directions/json"
         val destString = "destination=${dest.latitude},${dest.longitude}"
         val startString = "origin=${start.latitude},${start.longitude}"
-        val apiKey = "key="
+        val apiKey = "key=${BuildConfig.MAPS_API_KEY}"
 
         return "$url?$destString&$startString&$apiKey"
     }
