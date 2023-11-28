@@ -21,7 +21,8 @@ data class RestaurantInfo(
     val types: List<String>,
     val user_ratings_total: Int?,
     val vicinity: String,
-    val price_level: Int?
+    val price_level: Int?,
+    val reviews: List<GoogleReview>?
 )
 
 data class Geometry(
@@ -48,4 +49,17 @@ data class Photo(
     val html_attributions: List<String>,
     val photo_reference: String,
     val width: Int
+)
+
+data class GoogleReview(
+    val author_name: String,
+    val author_url: String,
+    val language: String,
+    val original_language: String,
+    val profile_photo_url: String,
+    val rating: Int,
+    val relative_time_description: String,
+    val text: String,
+    val time: Long,
+    val translated: Boolean
 )

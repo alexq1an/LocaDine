@@ -66,6 +66,7 @@ class DemoFetchSpecificRestaurantActivity : AppCompatActivity() {
         result += "Average rating: ${restaurant.rating}\n"
         result += "Number of ratings: ${restaurant.user_ratings_total}\n"
         result += "Latitude: ${restaurant.geometry.location.lat}, longitude: ${restaurant.geometry.location.lng}\n\n"
+        result += "One review: Author='${restaurant.reviews?.get(1)?.author_name}' Content='${restaurant.reviews?.get(0)?.text}'\n\n"
 
         return result
     }
