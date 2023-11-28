@@ -23,6 +23,8 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
     private lateinit var mapButton: Button
     private lateinit var goToChatbotButton: Button
     private lateinit var notificationButton: Button
+    private lateinit var demoFindNearbyRestaurantsButton: Button
+    private lateinit var demoFetchSpecificRestaurantButton: Button
 
     private val CHANNEL_ID = "localdine"
     private val CHANNEL_NAME = "Loca Dine"
@@ -44,6 +46,8 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
         mapButton = findViewById(R.id.map_button)
         goToChatbotButton = findViewById(R.id.go_to_chatbot_button)
         notificationButton = findViewById(R.id.notification_button)
+        demoFindNearbyRestaurantsButton = findViewById(R.id.demo_find_nearby_restaurants)
+        demoFetchSpecificRestaurantButton = findViewById(R.id.demo_fetch_specific_restaurant)
 
         val isLoggedIn = auth.currentUser != null
         if (isLoggedIn) {
@@ -73,6 +77,14 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
         notificationButton.setOnClickListener {
             NotificationService.displayNotification(this, "Test", "This is a test notification")
         }
+
+        demoFindNearbyRestaurantsButton.setOnClickListener {
+            startActivity(Intent(this, DemoFindNearbyRestaurantsActivity::class.java))
+        }
+
+        demoFetchSpecificRestaurantButton.setOnClickListener {
+            startActivity(Intent(this, DemoFetchSpecificRestaurantActivity::class.java))
+        }
     }
 
     private fun setupNotification() {
@@ -89,5 +101,4 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
     override fun onLocationGet(location: LatLng) {
         println("DBG: Current Location: $location")
     }
-
 }

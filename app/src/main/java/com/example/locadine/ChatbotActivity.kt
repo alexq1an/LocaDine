@@ -9,7 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.locadine.adapters.MessageAdapter
-import com.example.locadine.api.ApiService
+import com.example.locadine.api.OpenAIApiService
 import com.example.locadine.pojos.Message
 import com.example.locadine.pojos.OpenAIMessage
 import com.example.locadine.pojos.OpenAIRequest
@@ -32,7 +32,7 @@ class ChatbotActivity : AppCompatActivity() {
     private lateinit var messageArrayList: ArrayList<Message>
     private lateinit var messageAdapter: MessageAdapter
 
-    private lateinit var apiService: ApiService
+    private lateinit var openAIApiService: OpenAIApiService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,25 +57,8 @@ class ChatbotActivity : AppCompatActivity() {
         chatView.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
         chatView.adapter = messageAdapter
 
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://api.openai.com/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .client(
-                OkHttpClient.Builder()
-                    .addInterceptor { chain ->
-                    val request = chain.request().newBuilder()
-                        .addHeader("Authorization", "Bearer ${BuildConfig.OPENAI_API_KEY}")
-                        .addHeader("Content-Type", "application/json")
-                        .build()
-                    chain.proceed(request)
-                }
-                    .connectTimeout(1, TimeUnit.MINUTES)
-                    .readTimeout(1, TimeUnit.MINUTES)
-                    .writeTimeout(1, TimeUnit.MINUTES)
-                    .build()
-            ).build()
-
-        apiService = retrofit.create(ApiService::class.java)
+        val retrofit = Util.getOpenAIRetrofitInstance()
+        openAIApiService = retrofit.create(OpenAIApiService::class.java)
     }
     private fun sendMessage(userMessage: String) {
         addMessageAndScroll(Message(userMessage, SenderType.USER))
@@ -86,7 +69,7 @@ class ChatbotActivity : AppCompatActivity() {
             temperature = 0.7
         )
 
-        val call = apiService.sendMessageToOpenAI(request)
+        val call = openAIApiService.sendMessageToOpenAI(request)
         addMessageAndScroll(Message("Thinking...", SenderType.BOT))
 
         call.enqueue(object : Callback<OpenAIResponse> {
