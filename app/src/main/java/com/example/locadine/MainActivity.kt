@@ -1,5 +1,6 @@
 package com.example.locadine
 
+import RestaurantPageActivity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Intent
@@ -25,6 +26,7 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
     private lateinit var notificationButton: Button
     private lateinit var demoFindNearbyRestaurantsButton: Button
     private lateinit var demoFetchSpecificRestaurantButton: Button
+    private lateinit var restaurantPageButton: Button
 
     private val CHANNEL_ID = "localdine"
     private val CHANNEL_NAME = "Loca Dine"
@@ -48,6 +50,8 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
         notificationButton = findViewById(R.id.notification_button)
         demoFindNearbyRestaurantsButton = findViewById(R.id.demo_find_nearby_restaurants)
         demoFetchSpecificRestaurantButton = findViewById(R.id.demo_fetch_specific_restaurant)
+        restaurantPageButton = findViewById(R.id.restaurant_info_button)
+
 
         val isLoggedIn = auth.currentUser != null
         if (isLoggedIn) {
@@ -85,6 +89,12 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
         demoFetchSpecificRestaurantButton.setOnClickListener {
             startActivity(Intent(this, DemoFetchSpecificRestaurantActivity::class.java))
         }
+
+        restaurantPageButton.setOnClickListener {
+            val intent = Intent(this, RestaurantPageActivity::class.java)
+            intent.putExtra("PLACE_ID", "ChIJBRXCcsB5hlQRewtNTQuhEoI")
+            startActivity(intent)
+        }
     }
 
     private fun setupNotification() {
@@ -102,3 +112,4 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
         println("DBG: Current Location: $location")
     }
 }
+

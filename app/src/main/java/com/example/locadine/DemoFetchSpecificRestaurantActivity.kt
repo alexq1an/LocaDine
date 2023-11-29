@@ -32,6 +32,7 @@ class DemoFetchSpecificRestaurantActivity : AppCompatActivity() {
     }
 
     private fun sendRequest() {
+
         val placeId = "ChIJBRXCcsB5hlQRewtNTQuhEoI"
         val call = googlePlacesAPIService.getPlaceDetails(placeId, BuildConfig.MAPS_API_KEY)
         call.enqueue(object : Callback<GetPlaceDetailsResponse> {
