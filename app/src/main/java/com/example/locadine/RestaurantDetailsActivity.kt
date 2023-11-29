@@ -1,41 +1,35 @@
+package com.example.locadine
+
 import android.content.Intent
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
-import android.widget.Spinner
-import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
-import com.google.firebase.firestore.core.View
 import android.widget.ImageView
 import android.widget.ListView
+import android.widget.Spinner
+import android.widget.TextView
 import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
+import com.bumptech.glide.Glide
 import com.example.locadine.adapters.ReviewListAdapter
+import com.example.locadine.api.GooglePlacesAPIService
+import com.example.locadine.pojos.GetPlaceDetailsResponse
+import com.example.locadine.pojos.RestaurantInfo
 import com.example.locadine.pojos.Review
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.firestore.FirebaseFirestore
-import io.grpc.android.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import com.bumptech.glide.Glide
-import com.example.locadine.AddReviewActivity
-import com.example.locadine.R
-import com.example.locadine.Util
-import com.example.locadine.api.GooglePlacesAPIService
-import com.example.locadine.pojos.GetPlaceDetailsResponse
-import com.example.locadine.pojos.RestaurantInfo
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-import java.lang.Exception
-class RestaurantPageActivity : AppCompatActivity() {
-
+class RestaurantDetailsActivity : AppCompatActivity() {
     private lateinit var textViewName: TextView
     private lateinit var textViewAddress: TextView
     private lateinit var textViewPhoneNumber: TextView
@@ -63,7 +57,7 @@ class RestaurantPageActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_restaurant)
+        setContentView(R.layout.activity_restaurant_details)
 
         db = FirebaseFirestore.getInstance()
 
@@ -141,18 +135,18 @@ class RestaurantPageActivity : AppCompatActivity() {
                     restaurantsSummary.text = getRestaurantSummary(restaurant)
 
                     val photoUrl = Util.getPhotoUrl(restaurant.photos!![0].photo_reference)
-                    Glide.with(this@RestaurantPageActivity)
+                    Glide.with(this@RestaurantDetailsActivity)
                         .load(photoUrl)
                         .into(imageView1)
                 } else {
                     // Handle error
-                    Toast.makeText(this@RestaurantPageActivity, "Error fetching restaurant details", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@RestaurantDetailsActivity, "Error fetching restaurant details", Toast.LENGTH_SHORT).show()
                 }
             }
 
             override fun onFailure(call: Call<GetPlaceDetailsResponse>, t: Throwable) {
                 // Handle the failure case, such as a network error
-                Toast.makeText(this@RestaurantPageActivity, "Network error", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@RestaurantDetailsActivity, "Network error", Toast.LENGTH_SHORT).show()
             }
         })
     }
@@ -173,7 +167,7 @@ class RestaurantPageActivity : AppCompatActivity() {
         db.collection("reviews").get().addOnCompleteListener(OnCompleteListener {
             if (it.isSuccessful) {
                 val reviews = it.result.documents.map { doc -> Review(doc.data as Map<String, Any>) }
-                val sortedReviews = reviews.sortedByDescending { it -> it.createdAt }
+                val sortedReviews = reviews.sortedByDescending { review -> review.createdAt }
                 arrayAdapter.replace(sortedReviews)
                 arrayAdapter.notifyDataSetChanged()
             } else {
@@ -198,8 +192,4 @@ class RestaurantPageActivity : AppCompatActivity() {
 
         return result
     }
-
 }
-
-
-

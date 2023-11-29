@@ -1,6 +1,5 @@
 package com.example.locadine
 
-import RestaurantPageActivity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Intent
@@ -91,7 +90,7 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
         }
 
         restaurantPageButton.setOnClickListener {
-            val intent = Intent(this, RestaurantPageActivity::class.java)
+            val intent = Intent(this, RestaurantDetailsActivity::class.java)
             intent.putExtra("PLACE_ID", "ChIJBRXCcsB5hlQRewtNTQuhEoI")
             startActivity(intent)
         }
