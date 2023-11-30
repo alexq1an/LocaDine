@@ -6,8 +6,10 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.locadine.ViewModels.RestaurantInfoViewModel
 import com.example.locadine.adapters.MessageAdapter
 import com.example.locadine.api.OpenAIApiService
 import com.example.locadine.pojos.Message
@@ -15,6 +17,7 @@ import com.example.locadine.pojos.OpenAIMessage
 import com.example.locadine.pojos.OpenAIRequest
 import com.example.locadine.pojos.OpenAIResponse
 import com.example.locadine.pojos.OpenAIRoleType
+import com.example.locadine.pojos.RestaurantInfo
 import com.example.locadine.pojos.SenderType
 import okhttp3.OkHttpClient
 import retrofit2.Call
@@ -60,6 +63,7 @@ class ChatbotActivity : AppCompatActivity() {
         val retrofit = Util.getOpenAIRetrofitInstance()
         openAIApiService = retrofit.create(OpenAIApiService::class.java)
     }
+
     private fun sendMessage(userMessage: String) {
         addMessageAndScroll(Message(userMessage, SenderType.USER))
 
@@ -102,7 +106,7 @@ class ChatbotActivity : AppCompatActivity() {
     }
 
     private fun getPrePrompt(): String {
-        return getChatHistory() + "Create an answer that uses 50 tokens or less\n\n"
+        return getRestaurantInfo() + getChatHistory() + "Create an answer that uses 50 tokens or less\n\n"
     }
 
     private fun getChatHistory(): String {
@@ -115,5 +119,29 @@ class ChatbotActivity : AppCompatActivity() {
             }
         }
         return history
+    }
+
+    private fun getRestaurantInfo(): String {
+        val restaurants = RestaurantInfoViewModel.restaurantInfoList
+        return if (restaurants.isNotEmpty()) {
+            "Here is information about nearby restaurants:\n\n" + getRestaurantsSummary(restaurants)
+        } else {
+            ""
+        }
+    }
+
+    private fun getRestaurantsSummary(restaurants: List<RestaurantInfo>): String {
+        var result = ""
+
+        restaurants.forEach {
+            result += "Name: ${it.name}\n"
+            result += "Open now? ${it.opening_hours?.open_now}\n"
+            result += "Price level: ${it.price_level}\n"
+            result += "Business status: ${it.business_status}\n"
+            result += "Average rating: ${it.rating}\n"
+            result += "Number of ratings: ${it.user_ratings_total}\n\n"
+        }
+
+        return result
     }
 }
