@@ -7,6 +7,10 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.maps.model.LatLng
 import android.os.Build
+import okhttp3.OkHttpClient
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 object Util {
 
@@ -40,5 +44,47 @@ object Util {
         val apiKey = "key=${BuildConfig.MAPS_API_KEY}"
 
         return "$url?$destString&$startString&$apiKey"
+    }
+
+    fun getOpenAIRetrofitInstance(): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://api.openai.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        val request = chain.request().newBuilder()
+                            .addHeader("Authorization", "Bearer ${BuildConfig.OPENAI_API_KEY}")
+                            .addHeader("Content-Type", "application/json")
+                            .build()
+                        chain.proceed(request)
+                    }
+                    .connectTimeout(1, TimeUnit.MINUTES)
+                    .readTimeout(1, TimeUnit.MINUTES)
+                    .writeTimeout(1, TimeUnit.MINUTES)
+                    .build()
+            ).build()
+    }
+
+    fun getGooglePlacesRetrofitInstance(): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://maps.googleapis.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        val request = chain.request().newBuilder()
+                            .build()
+                        chain.proceed(request)
+                    }
+                    .connectTimeout(1, TimeUnit.MINUTES)
+                    .readTimeout(1, TimeUnit.MINUTES)
+                    .writeTimeout(1, TimeUnit.MINUTES)
+                    .build()
+            ).build()
+    }
+
+    fun getPhotoUrl(photoReference: String): String {
+        return "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${BuildConfig.MAPS_API_KEY}"
     }
 }
