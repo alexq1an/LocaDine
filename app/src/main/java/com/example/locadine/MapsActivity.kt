@@ -25,6 +25,7 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
@@ -122,18 +123,23 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
                     if (response.isSuccessful) {
                         val restaurants = response.body()!!.results
 
+                        val markerList = mutableListOf<Marker>() // create a list for marker to calculate camera bound
                         // Iterate through the list of restaurants and add markers
                         restaurants?.forEach { restaurant ->
                             val restaurantLocation = restaurant.geometry.location
                             val restaurantLatLng = LatLng(restaurantLocation.lat, restaurantLocation.lng)
 
-                            mMap.addMarker(
+                            val marker = mMap.addMarker(
                                 MarkerOptions()
                                     .position(restaurantLatLng)
                                     .title(restaurant.name)
                                 // Add any other marker customization as needed
                             )
+                            if (marker != null) { // Mandatory not null check to add marker to the list
+                                markerList.add(marker)
+                            }
                         }
+                        moveCameraToFitMarkers(markerList)
 
                     } else {
                         Toast.makeText(applicationContext, "Problem with Showing Markers", Toast.LENGTH_SHORT).show()
@@ -147,6 +153,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         }
     }
 
+    private fun moveCameraToFitMarkers(markerList: List<Marker>) {
+        val builder = LatLngBounds.Builder()
+
+        for (marker in markerList) {
+            builder.include(marker.position)
+        }
+
+        val bounds = builder.build()
+        val padding = 100 // Adjust the padding as needed
+
+        // Move camera to fit the markers on the map
+        val cu = CameraUpdateFactory.newLatLngBounds(bounds, padding)
+        mMap.moveCamera(cu)
+    }
+
 
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -157,7 +178,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
         markerOptions = MarkerOptions()
         polylineOptions = PolylineOptions()
-        
+
         mMap.setOnMarkerClickListener(this)
         getCurrentLocation()
     }
