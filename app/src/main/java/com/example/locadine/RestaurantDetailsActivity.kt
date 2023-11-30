@@ -29,19 +29,26 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
+
+// need rating bar that shows stars for price and rating
+// organize summary to be more readable
+// make review relevant to only restaurant
+// add favourite button
+// make reviews scrollable
+// make hours accurate to real store hours
+
+
 class RestaurantDetailsActivity : AppCompatActivity() {
     private lateinit var textViewName: TextView
     private lateinit var textViewAddress: TextView
     private lateinit var textViewPhoneNumber: TextView
     private lateinit var textViewWebsite: TextView
-    private lateinit var editTextUserReview: EditText
     private lateinit var buttonSubmitReview: Button
+    private lateinit var favouriteButton : Button
     private lateinit var restaurantsSummary: TextView
     private lateinit var imageView1: ImageView
     private lateinit var imageView2: ImageView
     private lateinit var imageView3: ImageView
-
-
     private lateinit var hoursSpinner: Spinner
 
     // Reviews
@@ -67,6 +74,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         textViewWebsite = findViewById(R.id.textViewWebsite)
         hoursSpinner = findViewById(R.id.hoursSpinner)
         restaurantsSummary = findViewById(R.id.textViewSummary)
+        favouriteButton = findViewById(R.id.favourite_button)
 
         //selectedHoursTextView = findViewById(R.id.selectedHoursTextView)
 
@@ -132,12 +140,23 @@ class RestaurantDetailsActivity : AppCompatActivity() {
             override fun onResponse(call: Call<GetPlaceDetailsResponse>, response: Response<GetPlaceDetailsResponse>) {
                 if (response.isSuccessful) {
                     val restaurant = response.body()!!.result
-                    restaurantsSummary.text = getRestaurantSummary(restaurant)
+                    restaurantsSummary.text = getRestaurantSummary(restaurant)  // separate summary
 
-                    val photoUrl = Util.getPhotoUrl(restaurant.photos!![0].photo_reference)
+                    val photoUrl1 = Util.getPhotoUrl(restaurant.photos!![0].photo_reference)
                     Glide.with(this@RestaurantDetailsActivity)
-                        .load(photoUrl)
+                        .load(photoUrl1)
                         .into(imageView1)
+
+                    val photoUrl2 = Util.getPhotoUrl(restaurant.photos!![1].photo_reference)
+                    Glide.with(this@RestaurantDetailsActivity)
+                        .load(photoUrl2)
+                        .into(imageView2)
+
+                    // Load image into imageView3
+                    val photoUrl3 = Util.getPhotoUrl(restaurant.photos!![2].photo_reference)
+                    Glide.with(this@RestaurantDetailsActivity)
+                        .load(photoUrl3)
+                        .into(imageView3)
                 } else {
                     // Handle error
                     Toast.makeText(this@RestaurantDetailsActivity, "Error fetching restaurant details", Toast.LENGTH_SHORT).show()
@@ -187,8 +206,8 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         result += "Business status: ${restaurant.business_status}\n"
         result += "Average rating: ${restaurant.rating}\n"
         result += "Number of ratings: ${restaurant.user_ratings_total}\n"
-        result += "Latitude: ${restaurant.geometry.location.lat}, longitude: ${restaurant.geometry.location.lng}\n\n"
-        result += "One review: Author='${restaurant.reviews?.get(1)?.author_name}' Content='${restaurant.reviews?.get(0)?.text}'\n\n"
+        //result += "Latitude: ${restaurant.geometry.location.lat}, longitude: ${restaurant.geometry.location.lng}\n\n"
+        //result += "One review: Author='${restaurant.reviews?.get(1)?.author_name}' Content='${restaurant.reviews?.get(0)?.text}'\n\n"
 
         return result
     }
