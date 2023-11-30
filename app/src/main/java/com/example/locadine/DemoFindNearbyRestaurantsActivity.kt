@@ -33,7 +33,7 @@ class DemoFindNearbyRestaurantsActivity : AppCompatActivity() {
 
     private fun sendRequest() {
         val location = "49.2768,-122.9180" // SFU location
-        val radiusInMeters = 1000
+        val radiusInMeters = 300
         val call = googlePlacesAPIService.findNearbyRestaurants(location, radiusInMeters, BuildConfig.MAPS_API_KEY)
         call.enqueue(object : Callback<NearbySearchResponse> {
             override fun onResponse(call: Call<NearbySearchResponse>, response: Response<NearbySearchResponse>) {

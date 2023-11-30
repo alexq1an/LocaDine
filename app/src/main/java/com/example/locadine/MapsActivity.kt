@@ -1,13 +1,17 @@
 package com.example.locadine
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.location.Location
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.example.locadine.ViewModels.MapViewModel
+import com.example.locadine.api.GooglePlacesAPIService
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -16,6 +20,7 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.example.locadine.databinding.ActivityMapsBinding
+import com.example.locadine.pojos.NearbySearchResponse
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
@@ -23,6 +28,10 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.LocationCallBack,
     GoogleMap.OnMarkerClickListener {
@@ -53,9 +62,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
 
+        // Activate Google Place API
+        val retrofit = Util.getGooglePlacesRetrofitInstance()
+        googlePlacesAPIService = retrofit.create(GooglePlacesAPIService::class.java)
+
         findRestaurantButton = binding.findButton
         findRestaurantButton.setOnClickListener(){
-            // TODO future find service
+            fetchRestaurants()
         }
 
         mapSwitch = binding.mapSwitch
@@ -71,6 +84,70 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         mapViewModel = MapViewModel(fusedLocationProviderClient)
 
     }
+    @SuppressLint("MissingPermission")
+    fun requestLocation(callback: (latitude: Double, longitude: Double) -> Unit) {
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location: Location? ->
+                // Got last known location
+                if (location != null) {
+                    val latitude = location.latitude
+                    val longitude = location.longitude
+                    // Call the callback with the location
+                    callback(latitude, longitude)
+                }
+            }
+    }
+    private lateinit var googlePlacesAPIService: GooglePlacesAPIService
+    private fun fetchRestaurants() {
+
+        // Fetch the user's location
+        requestLocation { latitude, longitude ->
+
+            // Now that we have the user's location, proceed to fetch nearby restaurants
+            val radiusInMeters = 5000 // TODO user input
+            val curLocation = "$latitude,$longitude"
+
+            // Clear existing markers
+            mMap.clear()
+
+            // Fetch nearby restaurants
+            val call = googlePlacesAPIService.findNearbyRestaurants(curLocation, radiusInMeters, BuildConfig.MAPS_API_KEY)
+            call.enqueue(object : Callback<NearbySearchResponse> {
+                override fun onResponse(
+                    call: Call<NearbySearchResponse>,
+                    response: Response<NearbySearchResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        val restaurants = response.body()!!.results
+
+                        // Iterate through the list of restaurants and add markers
+                        restaurants?.forEach { restaurant ->
+                            val restaurantLocation = restaurant.geometry.location
+                            val restaurantLatLng = LatLng(restaurantLocation.lat, restaurantLocation.lng)
+
+                            mMap.addMarker(
+                                MarkerOptions()
+                                    .position(restaurantLatLng)
+                                    .title(restaurant.name)
+                                // Add any other marker customization as needed
+                            )
+                        }
+
+                    } else {
+                        Toast.makeText(applicationContext, "Problem with Showing Markers", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<NearbySearchResponse>, t: Throwable) {
+                    // Handle the failure case, such as a network error
+                }
+            })
+        }
+    }
+
+
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
