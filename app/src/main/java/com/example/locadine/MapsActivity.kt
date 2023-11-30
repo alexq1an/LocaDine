@@ -34,8 +34,7 @@ import retrofit2.Callback
 import retrofit2.Response
 
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.LocationCallBack,
-    GoogleMap.OnMarkerClickListener {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.LocationCallBack {
 
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityMapsBinding
@@ -132,8 +131,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
                             val marker = mMap.addMarker(
                                 MarkerOptions()
                                     .position(restaurantLatLng)
-                                    .title(restaurant.name)
-                                // Add any other marker customization as needed
+                                    .title("${restaurant.rating}  ${restaurant.name}")
+
                             )
                             if (marker != null) { // Mandatory not null check to add marker to the list
                                 markerList.add(marker)
@@ -179,7 +178,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         markerOptions = MarkerOptions()
         polylineOptions = PolylineOptions()
 
-        mMap.setOnMarkerClickListener(this)
+
         getCurrentLocation()
     }
 
@@ -281,11 +280,5 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         }
     }
 
-    //Returns the LatLng of the clicked marker, can change to do something else
-    override fun onMarkerClick(marker: Marker): Boolean {
-        val position = marker.position
-        println("dbg: clicked!! $position")
-        return true
-    }
 
 }
