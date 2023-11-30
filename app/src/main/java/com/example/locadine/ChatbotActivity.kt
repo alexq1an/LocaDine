@@ -63,7 +63,9 @@ class ChatbotActivity : AppCompatActivity() {
         val retrofit = Util.getOpenAIRetrofitInstance()
         openAIApiService = retrofit.create(OpenAIApiService::class.java)
 
-        addMessageAndScroll(Message("Hi there, I have access details of restaurants near you. Ask me any questions :)", SenderType.BOT))
+        addMessageAndScroll(Message("Hi there, I am a chatbot powered by OpenAI's GTP 3.5 model. " +
+                "I have access to details of restaurants near you such as name, price level" +
+                ", average rating, and top reviews. Ask me any questions and I'll try my best to answer :)", SenderType.BOT))
     }
 
     private fun sendMessage(userMessage: String) {
@@ -108,7 +110,7 @@ class ChatbotActivity : AppCompatActivity() {
     }
 
     private fun getPrePrompt(): String {
-        return getRestaurantInfo() + getChatHistory() + "Create an answer that uses 50 tokens or less\n\n"
+        return getRestaurantInfo() + getChatHistory() + "Create an answer that uses an average of 50 tokens but if needed you can use a maximum of 150 tokens\n\n"
     }
 
     private fun getChatHistory(): String {
@@ -141,7 +143,22 @@ class ChatbotActivity : AppCompatActivity() {
             result += "Price level: ${priceLevelToText(it.price_level)}\n"
             result += "Business status: ${it.business_status}\n"
             result += "Average rating: ${it.rating}\n"
-            result += "Number of ratings: ${it.user_ratings_total}\n\n"
+            result += "Number of ratings: ${it.user_ratings_total}\n"
+            result += "Reviews:\n" + getReviews(it)
+        }
+
+        return result
+    }
+
+    private fun getReviews(restaurant: RestaurantInfo): String {
+        var result = ""
+
+        for (i in 0..5) {
+            if (restaurant.reviews == null || restaurant.reviews!!.size <= i) {
+                break
+            }
+            val review = restaurant.reviews!![i]
+            result += "${review.author_name} gave this restaurant a ${review.rating} stars review with the following comment: ${review.text}\n\n"
         }
 
         return result
