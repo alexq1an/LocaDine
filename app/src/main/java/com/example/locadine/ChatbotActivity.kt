@@ -62,6 +62,8 @@ class ChatbotActivity : AppCompatActivity() {
 
         val retrofit = Util.getOpenAIRetrofitInstance()
         openAIApiService = retrofit.create(OpenAIApiService::class.java)
+
+        addMessageAndScroll(Message("Hi there, I have access details of restaurants near you. Ask me any questions :)", SenderType.BOT))
     }
 
     private fun sendMessage(userMessage: String) {
@@ -136,12 +138,26 @@ class ChatbotActivity : AppCompatActivity() {
         restaurants.forEach {
             result += "Name: ${it.name}\n"
             result += "Open now? ${it.opening_hours?.open_now}\n"
-            result += "Price level: ${it.price_level}\n"
+            result += "Price level: ${priceLevelToText(it.price_level)}\n"
             result += "Business status: ${it.business_status}\n"
             result += "Average rating: ${it.rating}\n"
             result += "Number of ratings: ${it.user_ratings_total}\n\n"
         }
 
         return result
+    }
+
+    private fun priceLevelToText(level: Int?) : String {
+        if (level == null) {
+            return "Unknown"
+        } else if (level == 1) {
+            return "Cheap"
+        } else if (level == 2) {
+            return "Moderate"
+        } else if (level == 3) {
+            return "Expensive"
+        } else {
+            return "Very expensive"
+        }
     }
 }
