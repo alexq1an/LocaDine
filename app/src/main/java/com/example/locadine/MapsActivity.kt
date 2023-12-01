@@ -172,8 +172,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         val route = ArrayList<LatLng>()
         var duration = ""
         var distance = ""
-        mapViewModel.routeLiveData.observe(this) {
 
+        mapViewModel.routeLiveData.observe(this) {
             it.routes[0].legs[0].steps.forEach { i ->
                 route.addAll(mapViewModel.decodePolyline(i.polyline.points))
             }
