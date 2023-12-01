@@ -115,7 +115,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         requestLocation { latitude, longitude ->
 
             // Now that we have the user's location, proceed to fetch nearby restaurants
-            val radiusInMeters = 1000 // TODO user input
+            val radiusInMeters = FilterSetting.distance
             val curLocation = "$latitude,$longitude"
 
             // Clear existing markers
@@ -147,7 +147,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
                                 markerList.add(marker)
                             }
                         }
-                        moveCameraToFitMarkers(markerList)
+                        try{
+                            moveCameraToFitMarkers(markerList)
+                        } catch(e:Exception){
+                            Toast.makeText(applicationContext, "There is no desired restaurant in ur region",Toast.LENGTH_SHORT).show()
+                        }
 
                     } else {
                         Toast.makeText(applicationContext, "Problem with Showing Markers", Toast.LENGTH_SHORT).show()
