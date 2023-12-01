@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.location.Location
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -81,6 +82,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
         }
 
+        // for filter restaurant
+        val toolbarButton = findViewById<Button>(R.id.restaurant_filter)
+        toolbarButton.setOnClickListener {
+            val filterDialog = RestaurantFilterDialog()
+            val bundle = Bundle()
+            filterDialog.show(supportFragmentManager, "CustomDialogFragment")
+        }
+
         mapViewModel = MapViewModel(fusedLocationProviderClient)
 
     }
@@ -106,7 +115,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         requestLocation { latitude, longitude ->
 
             // Now that we have the user's location, proceed to fetch nearby restaurants
-            val radiusInMeters = 5000 // TODO user input
+            val radiusInMeters = 1000 // TODO user input
             val curLocation = "$latitude,$longitude"
 
             // Clear existing markers
