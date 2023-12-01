@@ -9,6 +9,7 @@ import android.widget.TextView
 import android.widget.Toast
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class SignupActivity : AppCompatActivity() {
     private lateinit var email: EditText
@@ -17,6 +18,7 @@ class SignupActivity : AppCompatActivity() {
     private lateinit var loginLink: TextView
 
     private lateinit var auth: FirebaseAuth
+    private lateinit var db: FirebaseFirestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,6 +30,7 @@ class SignupActivity : AppCompatActivity() {
         loginLink = findViewById(R.id.login_link)
 
         auth = FirebaseAuth.getInstance()
+        db = FirebaseFirestore.getInstance()
 
         signupButton.setOnClickListener {
             val emailText = email.text.toString()
@@ -52,6 +55,7 @@ class SignupActivity : AppCompatActivity() {
                 Toast.makeText(this, "Signed up successfully", Toast.LENGTH_SHORT).show()
                 val intent = Intent(this, LoginActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+                db.collection("users").document(auth.uid!!).set(hashMapOf("email" to email))
                 startActivity(intent)
             } else {
                 val errorMessage = it.exception?.message
