@@ -51,6 +51,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
     private lateinit var imageView3: ImageView
     private lateinit var hoursSpinner: Spinner
     private lateinit var restaurantID: String
+    private lateinit var restaurant: RestaurantInfo
     // Reviews
     private lateinit var arrayList: ArrayList<Review>
     private lateinit var arrayAdapter: ReviewListAdapter
@@ -146,7 +147,6 @@ class RestaurantDetailsActivity : AppCompatActivity() {
                     removeFavourite()
                     Toast.makeText(this, "Removed from favourites!", Toast.LENGTH_SHORT).show()
                 }
-                // check if resturaunt is already favourite
 
             }
             else {
@@ -163,7 +163,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         call.enqueue(object : Callback<GetPlaceDetailsResponse> {
             override fun onResponse(call: Call<GetPlaceDetailsResponse>, response: Response<GetPlaceDetailsResponse>) {
                 if (response.isSuccessful) {
-                    val restaurant = response.body()!!.result
+                    restaurant = response.body()!!.result
                     restaurantsSummary.text = getRestaurantSummary(restaurant)  // separate summary
 
                     val photoUrl1 = Util.getPhotoUrl(restaurant.photos!![0].photo_reference)
@@ -238,7 +238,11 @@ class RestaurantDetailsActivity : AppCompatActivity() {
 
     private fun addFavourite() {
         db.collection("users").document(fbAuth.uid!!).collection("favourites").document().set(
-            hashMapOf("restaurantID" to restaurantID)
+            hashMapOf(
+                "restaurantID" to restaurantID,
+                "restaurantName" to restaurant.name,
+                "restaurantPicture" to Util.getPhotoUrl(restaurant.photos!![0].photo_reference),
+            )
         )
         favouriteButton.text = "Unfavourite"
         favouriteFlag = true
@@ -247,40 +251,41 @@ class RestaurantDetailsActivity : AppCompatActivity() {
     private fun removeFavourite() {
         val favCollection = db.collection("users").document(fbAuth.uid!!).collection("favourites")
         val query = favCollection.whereEqualTo("restaurantID", restaurantID)
-        query.get().addOnCompleteListener(this, OnCompleteListener {
-            if (it.isSuccessful) {
-                val ref = db.collection("users").document(fbAuth.uid!!).collection("favourites").document(it.result.documents[0].id)
-                ref.delete().addOnCompleteListener(this, OnCompleteListener {
+        query.get().addOnCompleteListener(this) { res ->
+            if (res.isSuccessful) {
+                val ref = db.collection("users").document(fbAuth.uid!!).collection("favourites")
+                    .document(res.result.documents[0].id)
+                ref.delete().addOnCompleteListener(this) {
                     if (it.isSuccessful) {
                         Toast.makeText(this, "Removed from favourites!", Toast.LENGTH_SHORT).show()
                         favouriteButton.text = "Favourite"
                         favouriteFlag = false
-                    }
-                    else {
+                    } else {
                         println("Document not found")
                     }
-                })
-            }
-            else {
+                }
+            } else {
                 println("Document not found")
             }
-        })
+        }
     }
 
     private fun checkIfFavourite() {
         //checks if user already has this restaurant in favourites
         val favCollection = db.collection("users").document(fbAuth.uid!!).collection("favourites")
         val query = favCollection.whereEqualTo("restaurantID", restaurantID)
-        query.get().addOnCompleteListener(this, OnCompleteListener {
-            if (it.isSuccessful) {
+        query.get().addOnCompleteListener(this) {
+            
+            // set unfavourite only if the result is successful and the restaurant exist
+            if (it.isSuccessful && !it.result.documents.isEmpty()) {
+
                 favouriteButton.text = "Unfavourite"
                 favouriteFlag = true
-            }
-            else {
+            } else {
                 favouriteButton.text = "Favourite"
                 favouriteFlag = false
             }
-        })
+        }
 
     }
 
