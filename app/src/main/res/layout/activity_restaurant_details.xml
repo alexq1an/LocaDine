@@ -49,6 +49,14 @@
                 android:layout_marginTop="8dp"
                 android:layout_marginStart="4dp"/>
         </LinearLayout>
+        <RatingBar
+            android:id="@+id/ratingBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:isIndicator="true"
+            android:scaleX="0.75"
+            android:scaleY="0.75"/>
 
 
         <TextView
@@ -75,7 +83,7 @@
         <TextView
             android:id="@+id/textViewWebsite"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="20dp"
             android:layout_marginTop="8dp"
             android:text="Website: www.restaurant.com"/>
 
@@ -100,13 +108,38 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="5dp"
             android:text="Favourite" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Firebase Reviews"
+            android:layout_margin="20dp"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#238AC1" />
+
 
         <ListView
-            android:id="@+id/review_list_restaurant"
+            android:id="@+id/review_list_firebase"
             android:layout_width="match_parent"
-            android:layout_height="532dp"
+            android:layout_height="300dp"
             android:dividerHeight="10dp" />
 
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Google Reviews"
+            android:layout_margin="20dp"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#238AC1"
+            />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/google_review_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:dividerHeight="10dp" />
 
     </LinearLayout>
 </ScrollView>
