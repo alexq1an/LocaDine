@@ -297,7 +297,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         //result += "Website : ${restaurant.website}\n"
         //result += "Name: ${restaurant.name}\n"
         //result += "Id: ${restaurant.place_id}\n"
-        //result += "Open now? ${restaurant.opening_hours?.open_now}\n"
+        result += "Open now : ${restaurant.opening_hours?.open_now}\n"
         //result += "Price level: ${restaurant.price_level}\n"
         //result += "Business status: ${restaurant.business_status}\n"
         //result += "Average rating: ${restaurant.rating}\n"
