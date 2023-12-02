@@ -20,6 +20,7 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.example.locadine.databinding.ActivityMapsBinding
+import com.example.locadine.interfaces.FilterDialogListener
 import com.example.locadine.pojos.NearbySearchResponse
 import com.example.locadine.pojos.RestaurantInfo
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -34,7 +35,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.LocationCallBack {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.LocationCallBack, FilterDialogListener {
 
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityMapsBinding
@@ -43,7 +44,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
     private lateinit var polylineOptions: PolylineOptions
     private lateinit var mapSwitch: Button
     private lateinit var restaurantList: Button
-    private lateinit var findButton: Button
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var mapViewModel: MapViewModel
 
@@ -72,36 +72,33 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
         fetchRestaurants() // fetch restaurant when user enters the app
 
-        findButton = binding.findButton
-        findButton.setOnClickListener() {
-            fetchRestaurants()
-            mapSwitch = binding.mapSwitch
-            mapSwitch.setOnClickListener() {
-                if (mMap.mapType == GoogleMap.MAP_TYPE_NORMAL) {
-                    mMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
-                } else {
-                    mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
-                }
-
+        mapSwitch = binding.mapSwitch
+        mapSwitch.setOnClickListener() {
+            if (mMap.mapType == GoogleMap.MAP_TYPE_NORMAL) {
+                mMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
+            } else {
+                mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
             }
 
-            restaurantList = binding.listButton
-            restaurantList.setOnClickListener() {
-                val restaurantListDialog = RestaurantListDialog()
-                val bundle = Bundle()
-                restaurantListDialog.show(supportFragmentManager, "RestaurantList")
-            }
-
-            // for filter restaurant
-            val toolbarButton = findViewById<Button>(R.id.restaurant_filter)
-            toolbarButton.setOnClickListener {
-                val filterDialog = RestaurantFilterDialog()
-                val bundle = Bundle()
-                filterDialog.show(supportFragmentManager, "RestaurantFilter")
-            }
         }
-    }
 
+        restaurantList = binding.listButton
+        restaurantList.setOnClickListener() {
+            val restaurantListDialog = RestaurantListDialog()
+            val bundle = Bundle()
+            restaurantListDialog.show(supportFragmentManager, "RestaurantList")
+        }
+
+        // for filter restaurant
+        val toolbarButton = findViewById<Button>(R.id.restaurant_filter)
+        toolbarButton.setOnClickListener {
+            val filterDialog = RestaurantFilterDialog(this)
+            val bundle = Bundle()
+            filterDialog.show(supportFragmentManager, "RestaurantFilter")
+        }
+
+        fetchRestaurants()
+    }
 
     @SuppressLint("MissingPermission")
     fun requestLocation(callback: (latitude: Double, longitude: Double) -> Unit) {
@@ -143,8 +140,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
                         // Apply filters
                         val filterRatingLayer1 = filterByRating(restaurants, FilterSetting.rating) // apply filter layer by layer
-                         val filterPriceLayer2 = filterByPrice(filterRatingLayer1, FilterSetting.price) // next layer
-
+                        val filterPriceLayer2 = filterByPrice(filterRatingLayer1, FilterSetting.price) // next layer
 
                         val markerList = mutableListOf<Marker>() // create a list for marker to calculate camera bound
                         // Iterate through the list of restaurants and add markers
@@ -188,7 +184,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
     }
 
     private fun filterByPrice(restaurants: List<RestaurantInfo>, priceLevel: Int): List<RestaurantInfo> {
-        return restaurants.filter { it.price_level?.let { level -> level <= priceLevel } ?: false }
+        return if (priceLevel == -1) {
+            restaurants
+        } else {
+            restaurants.filter { it.price_level == priceLevel }
+        }
     }
 
 
@@ -331,5 +331,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
             println("dbg: A Duration: $duration A Distance: $distance")
         }
+    }
+
+    override fun onFilterApplied() {
+        fetchRestaurants()
     }
 }

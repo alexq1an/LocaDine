@@ -19,18 +19,18 @@
     </string-array>
 
     <string-array name="filter_rating">
-        <item>default</item>
+        <item>Any</item>
         <item>&gt; 3.5</item>
         <item>&gt; 4.0</item>
         <item>&gt; 4.5</item>
     </string-array>
 
     <string-array name="filter_price">
+        <item>Any</item>
         <item>$</item>
         <item>$$</item>
         <item>$$$</item>
         <item>$$$$</item>
-        <item>$$$$$</item>
 
     </string-array>
 </resources>

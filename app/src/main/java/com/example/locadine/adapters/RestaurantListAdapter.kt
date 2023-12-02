@@ -18,7 +18,7 @@ class RestaurantListAdapter(private val context: Context, private var restaurant
     }
 
     override fun getItem(position: Int): Any {
-        return restaurantInfo.get(position)
+        return restaurantInfo[position]
     }
 
     override fun getItemId(position: Int): Long {
@@ -34,25 +34,31 @@ class RestaurantListAdapter(private val context: Context, private var restaurant
         val adapterPrice = view.findViewById<TextView>(R.id.adapter_restaurant_price)
         val adapterOpen = view.findViewById<TextView>(R.id.adapter_restaurant_opening)
 
-        val photoUrl = Util.getPhotoUrl(restaurantInfo.get(position).photos!![0].photo_reference)
+        val photoUrl = Util.getPhotoUrl(restaurantInfo[position].photos!![0].photo_reference)
         Glide.with(view)
             .load(photoUrl)
             .into(adapterImage) // load photo into the image box
 
-        adapterName.text = restaurantInfo.get(position).name
-        adapterRating.text = "Rating: ${restaurantInfo.get(position).rating.toString()}"
-        adapterPrice.text = "Price range: ${restaurantInfo.get(position).price_level.toString()}"
-        adapterOpen.text = "Opening Hour: ${restaurantInfo.get(position).opening_hours.toString()}"
-        // adapterDistance.text = restaurantInfo.get(position).
-
-
-
-
-
-
-
+        adapterName.text = restaurantInfo[position].name
+        adapterRating.text = "Rating: ${restaurantInfo[position].rating.toString()}"
+        adapterPrice.text = "Price: ${getPrice(restaurantInfo[position].price_level)}"
+        if (restaurantInfo[position].opening_hours?.open_now == true) {
+            adapterOpen.text = "Open now"
+        } else {
+            adapterOpen.text = "Currently closed"
+        }
 
         return view
+    }
+
+    private fun getPrice(level: Int?): String {
+        return when (level) {
+            1 -> "$"
+            2 -> "$$"
+            3 -> "$$$"
+            4 -> "$$$$"
+            else -> "N/A"
+        }
     }
 
 }
