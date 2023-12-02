@@ -1,12 +1,15 @@
 package com.example.locadine
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
+import android.location.Location
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.maps.model.LatLng
 import android.os.Build
+import com.google.android.gms.location.LocationServices
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -36,6 +39,7 @@ object Util {
             )
         }
     }
+
 
     fun getRoutingUrl(start: LatLng, dest: LatLng): String {
         val url = "https://maps.googleapis.com/maps/api/directions/json"

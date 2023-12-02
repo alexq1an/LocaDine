@@ -9,4 +9,29 @@
         <item>Saturday : 10AM - 8PM</item>
         <item>Sunday : Closed</item>
     </string-array>
+
+
+    <string-array name="filter_distance">
+        <item>&lt; 200m</item>
+        <item>&lt; 500m</item>
+        <item>&lt; 1000m</item>
+        <item>&lt; 5000m</item>
+    </string-array>
+
+    <string-array name="filter_rating">
+        <item>default</item>
+        <item>&gt; 3.5</item>
+        <item>&gt; 4.0</item>
+        <item>&gt; 4.5</item>
+    </string-array>
+
+    <string-array name="filter_price">
+        <item>$</item>
+        <item>$$</item>
+        <item>$$$</item>
+        <item>$$$$</item>
+        <item>$$$$$</item>
+
+    </string-array>
 </resources>
+
