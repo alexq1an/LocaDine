@@ -5,9 +5,9 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Location
+import android.location.LocationManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -22,6 +22,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.example.locadine.databinding.ActivityMapsBinding
 import com.example.locadine.pojos.NearbySearchResponse
+import com.example.locadine.pojos.RestaurantInfo
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
@@ -33,6 +34,7 @@ import com.google.android.gms.maps.model.PolylineOptions
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import kotlin.properties.Delegates
 
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.LocationCallBack {
@@ -42,14 +44,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
     private lateinit var markerOptions: MarkerOptions
     private lateinit var polylineOptions: PolylineOptions
-    private lateinit var findRestaurantButton: Button
     private lateinit var mapSwitch: Button
     private lateinit var restaurantList: Button
+    private lateinit var findButton: Button
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var mapViewModel: MapViewModel
 
     private var polyLine: Polyline? = null
     private var currLocation: LatLng? = null
+
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,10 +73,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         val retrofit = Util.getGooglePlacesRetrofitInstance()
         googlePlacesAPIService = retrofit.create(GooglePlacesAPIService::class.java)
 
-        findRestaurantButton = binding.findButton
-        findRestaurantButton.setOnClickListener(){
+
+        fetchRestaurants() // fetch restaurant when user enters the app
+
+        findButton = binding.findButton
+        findButton.setOnClickListener(){
             fetchRestaurants()
         }
+
+
 
         mapSwitch = binding.mapSwitch
         mapSwitch.setOnClickListener(){
@@ -90,17 +100,22 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
             restaurantListDialog.show(supportFragmentManager,"RestaurantList")
         }
 
+
         // for filter restaurant
         val toolbarButton = findViewById<Button>(R.id.restaurant_filter)
         toolbarButton.setOnClickListener {
             val filterDialog = RestaurantFilterDialog()
             val bundle = Bundle()
             filterDialog.show(supportFragmentManager, "RestaurantFilter")
+
+
         }
 
         mapViewModel = MapViewModel(fusedLocationProviderClient)
 
     }
+
+
     @SuppressLint("MissingPermission")
     fun requestLocation(callback: (latitude: Double, longitude: Double) -> Unit) {
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -139,26 +154,34 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
                     if (response.isSuccessful) {
                         val restaurants = response.body()!!.results
 
+                        // Apply filters
+                        val filterRatingLayer1 = filterByRating(restaurants, FilterSetting.rating) // apply filter layer by layer
+                         val filterPriceLayer2 = filterByPrice(filterRatingLayer1, FilterSetting.price) // next layer
+
+
                         val markerList = mutableListOf<Marker>() // create a list for marker to calculate camera bound
                         // Iterate through the list of restaurants and add markers
-                        restaurants?.forEach { restaurant ->
-                            val restaurantLocation = restaurant.geometry.location
+                        filterPriceLayer2?.forEach { filterPriceLayer2 -> // for each restaurant after filter
+                            val restaurantLocation = filterPriceLayer2.geometry.location
                             val restaurantLatLng = LatLng(restaurantLocation.lat, restaurantLocation.lng)
 
                             val marker = mMap.addMarker(
                                 MarkerOptions()
                                     .position(restaurantLatLng)
-                                    .title("${restaurant.rating}  ${restaurant.name}")
+                                    .title("${filterPriceLayer2.rating}  ${filterPriceLayer2.name}")
 
                             )
                             if (marker != null) { // Mandatory not null check to add marker to the list
                                 markerList.add(marker)
                             }
                         }
+
+                        FilterSetting.restaurants = filterPriceLayer2 // pass all the data fetched into object for list data
+
                         try{
                             moveCameraToFitMarkers(markerList)
                         } catch(e:Exception){
-                            Toast.makeText(applicationContext, "There is no desired restaurant with current filter setting in your region",Toast.LENGTH_SHORT).show()
+                            Toast.makeText(applicationContext, "There is no desired restaurant with current filter setting in your region",Toast.LENGTH_LONG).show()
                         }
 
                     } else {
@@ -171,6 +194,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
                 }
             })
         }
+    }
+
+    private fun filterByRating(restaurants: List<RestaurantInfo>, minRating: Double): List<RestaurantInfo> {
+        return restaurants.filter {it.rating!! > minRating }
+
+    }
+
+    private fun filterByPrice(restaurants: List<RestaurantInfo>, priceLevel: Int): List<RestaurantInfo> {
+        return restaurants.filter { it.price_level == priceLevel }
     }
 
     private fun moveCameraToFitMarkers(markerList: List<Marker>) {
@@ -200,8 +232,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         polylineOptions = PolylineOptions()
 
 
+
+
         getCurrentLocation()
     }
+
 
     //gets the current location of device Once
     private fun getCurrentLocation() {

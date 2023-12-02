@@ -13,7 +13,7 @@ import com.example.locadine.pojos.RestaurantInfo
 class RestaurantListDialog: DialogFragment(), DialogInterface.OnClickListener{
 
     private lateinit var restaurantListView : ListView
-    private lateinit var restaurantList : ArrayList<RestaurantInfo>
+    private lateinit var restaurantList : List<RestaurantInfo>
     private lateinit var arrayAdapter: RestaurantListAdapter
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -26,6 +26,12 @@ class RestaurantListDialog: DialogFragment(), DialogInterface.OnClickListener{
 
         restaurantListView = view.findViewById(R.id.restaurant_list)
         restaurantList = ArrayList()
+        try{
+            restaurantList = FilterSetting.restaurants!!
+        }catch(e:Exception){ // do not transfer value to the list if user haven't find their restaurant yet
+            if (FilterSetting.restaurants == null)
+                Toast.makeText(requireContext(),"There is no restaurant can show, please find your restaurant first",Toast.LENGTH_SHORT).show()
+        }
         arrayAdapter = RestaurantListAdapter(requireContext(), restaurantList)
         restaurantListView.adapter = arrayAdapter
 
