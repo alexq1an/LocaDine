@@ -101,6 +101,12 @@
             android:layout_marginTop="5dp"
             android:text="Favourite" />
 
+        <Button
+            android:id="@+id/navigate_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Navigate" />
+
         <ListView
             android:id="@+id/review_list_restaurant"
             android:layout_width="match_parent"

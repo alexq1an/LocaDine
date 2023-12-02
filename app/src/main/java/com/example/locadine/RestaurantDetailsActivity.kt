@@ -1,7 +1,6 @@
 package com.example.locadine
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
@@ -11,6 +10,7 @@ import android.widget.ListView
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.example.locadine.adapters.ReviewListAdapter
@@ -18,7 +18,6 @@ import com.example.locadine.api.GooglePlacesAPIService
 import com.example.locadine.pojos.GetPlaceDetailsResponse
 import com.example.locadine.pojos.RestaurantInfo
 import com.example.locadine.pojos.Review
-import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
@@ -45,6 +44,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
     private lateinit var textViewWebsite: TextView
     private lateinit var buttonSubmitReview: Button
     private lateinit var favouriteButton : Button
+    private lateinit var navigateButton: Button
     private lateinit var restaurantsSummary: TextView
     private lateinit var imageView1: ImageView
     private lateinit var imageView2: ImageView
@@ -79,6 +79,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         hoursSpinner = findViewById(R.id.hoursSpinner)
         restaurantsSummary = findViewById(R.id.textViewSummary)
         favouriteButton = findViewById(R.id.favourite_button)
+        navigateButton = findViewById(R.id.navigate_button)
 
         //selectedHoursTextView = findViewById(R.id.selectedHoursTextView)
 
@@ -137,6 +138,15 @@ class RestaurantDetailsActivity : AppCompatActivity() {
 
         }
 
+        navigateButton.setOnClickListener {
+            val mapIntent = Intent(this, MapsActivity::class.java)
+            mapIntent.putExtra("Navigate", true)
+            mapIntent.putExtra("Lat", restaurant.geometry.location.lat)
+            mapIntent.putExtra("Lng", restaurant.geometry.location.lng)
+
+            startActivity(mapIntent)
+        }
+
         favouriteButton.setOnClickListener {
             if (fbAuth != null ){
                 if (!favouriteFlag) {
@@ -159,7 +169,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
 
 
     private fun sendRequest(placeId: String) {
-        val call = googlePlacesAPIService.getPlaceDetails(placeId, com.example.locadine.BuildConfig.MAPS_API_KEY)
+        val call = googlePlacesAPIService.getPlaceDetails(placeId, BuildConfig.MAPS_API_KEY)
         call.enqueue(object : Callback<GetPlaceDetailsResponse> {
             override fun onResponse(call: Call<GetPlaceDetailsResponse>, response: Response<GetPlaceDetailsResponse>) {
                 if (response.isSuccessful) {
@@ -207,17 +217,19 @@ class RestaurantDetailsActivity : AppCompatActivity() {
 
 
     private fun fetchReviews() {
-        db.collection("reviews").get().addOnCompleteListener(OnCompleteListener {
+        db.collection("reviews").get().addOnCompleteListener {
             if (it.isSuccessful) {
-                val reviews = it.result.documents.map { doc -> Review(doc.data as Map<String, Any>) }
+                val reviews =
+                    it.result.documents.map { doc -> Review(doc.data as Map<String, Any>) }
                 val sortedReviews = reviews.sortedByDescending { review -> review.createdAt }
                 arrayAdapter.replace(sortedReviews)
                 arrayAdapter.notifyDataSetChanged()
             } else {
                 val errorMessage = it.exception?.message
-                Toast.makeText(this, "Failed to fetch reviews. $errorMessage", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Failed to fetch reviews. $errorMessage", Toast.LENGTH_SHORT)
+                    .show()
             }
-        })
+        }
     }
 
     private fun getRestaurantSummary(restaurant: RestaurantInfo): String {

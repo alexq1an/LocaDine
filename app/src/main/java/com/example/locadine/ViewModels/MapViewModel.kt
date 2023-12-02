@@ -27,7 +27,7 @@ class MapViewModel(private val fusedLocationProviderClient: FusedLocationProvide
     private var currLocation: LatLng = LatLng(0.0,0.0)
     private lateinit var locationCallBack: LocationCallBack
 
-    private lateinit var locationUpdateCallback: LocationCallback
+    private var locationUpdateCallback: LocationCallback? = null
     private val locationMutLiveData = MutableLiveData<Location>()
     val locationLiveData: LiveData<Location> get() = locationMutLiveData
     private val routeMutLiveData = MutableLiveData<RouteData>()
@@ -66,7 +66,7 @@ class MapViewModel(private val fusedLocationProviderClient: FusedLocationProvide
             try {
                 fusedLocationProviderClient.requestLocationUpdates(
                     locationRequest,
-                    locationUpdateCallback,
+                    locationUpdateCallback!!,
                     null
                 )
             }catch (_: Exception){}
@@ -74,7 +74,9 @@ class MapViewModel(private val fusedLocationProviderClient: FusedLocationProvide
     }
 
     fun stopLocationUpdates() {
-        fusedLocationProviderClient.removeLocationUpdates(locationUpdateCallback)
+        if (locationUpdateCallback != null) {
+            fusedLocationProviderClient.removeLocationUpdates(locationUpdateCallback!!)
+        }
     }
 
     fun getRoutes(url: String) {

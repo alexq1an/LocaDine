@@ -3,24 +3,23 @@ package com.example.locadine
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Color
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.example.locadine.ViewModels.MapViewModel
-
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
 import com.example.locadine.databinding.ActivityMapsBinding
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
 
@@ -51,15 +50,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+
+
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
 
         findRestaurantButton = binding.findButton
         findRestaurantButton.setOnClickListener(){
-            // TODO future find service
-            //The code below is for testing and should be removed later
-            if (currLocation !=null) {
-                getRoute(currLocation!!, LatLng(49.16319821289473, -122.63795292655163))
-            }
         }
 
         mapSwitch = binding.mapSwitch
@@ -87,9 +83,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         
         mMap.setOnMarkerClickListener(this)
         getCurrentLocation()
-
-        //code below is for testing should be removed
-        locationUpdates()
     }
 
     //gets the current location of device Once
@@ -157,6 +150,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         markerOptions.position(location).title("You Are Here")
         lastMarker = mMap.addMarker(markerOptions)
         currLocation = location
+
+        navigationCheck(location)
+    }
+
+    private fun navigationCheck(location: LatLng) {
+        val intentValues = intent.getBooleanExtra("Navigate", false)
+        if (intentValues) {
+            val lat = intent.getDoubleExtra("Lat", 0.0)
+            val lng = intent.getDoubleExtra("Lng", 0.0)
+            getRoute(location, LatLng(lat,lng))
+            locationUpdates()
+        }
+
     }
 
 
