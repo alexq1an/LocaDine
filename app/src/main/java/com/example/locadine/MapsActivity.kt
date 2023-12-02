@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Location
-import android.location.LocationManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
@@ -34,8 +33,6 @@ import com.google.android.gms.maps.model.PolylineOptions
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import kotlin.properties.Delegates
-
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.LocationCallBack {
 
@@ -53,8 +50,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
     private var polyLine: Polyline? = null
     private var currLocation: LatLng? = null
 
-
-
+    private lateinit var googlePlacesAPIService: GooglePlacesAPIService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,6 +63,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+
+
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
 
         // Activate Google Place API
@@ -77,42 +75,37 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         fetchRestaurants() // fetch restaurant when user enters the app
 
         findButton = binding.findButton
-        findButton.setOnClickListener(){
+        findButton.setOnClickListener() {
             fetchRestaurants()
-        }
+            mapSwitch = binding.mapSwitch
+            mapSwitch.setOnClickListener() {
+                if (mMap.mapType == GoogleMap.MAP_TYPE_NORMAL) {
+                    mMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
+                } else {
+                    mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
+                }
 
-
-
-        mapSwitch = binding.mapSwitch
-        mapSwitch.setOnClickListener(){
-            if(mMap.mapType == GoogleMap.MAP_TYPE_NORMAL){
-                mMap.mapType= GoogleMap.MAP_TYPE_SATELLITE
-            }else{
-                mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
             }
 
+            restaurantList = binding.listButton
+            restaurantList.setOnClickListener() {
+                val restaurantListDialog = RestaurantListDialog()
+                val bundle = Bundle()
+                restaurantListDialog.show(supportFragmentManager, "RestaurantList")
+            }
+
+            // for filter restaurant
+            val toolbarButton = findViewById<Button>(R.id.restaurant_filter)
+            toolbarButton.setOnClickListener {
+                val filterDialog = RestaurantFilterDialog()
+                val bundle = Bundle()
+                filterDialog.show(supportFragmentManager, "RestaurantFilter")
+
+
+            }
+
+            mapViewModel = MapViewModel(fusedLocationProviderClient)
         }
-
-        restaurantList = binding.listButton
-        restaurantList.setOnClickListener(){
-            val restaurantListDialog = RestaurantListDialog()
-            val bundle = Bundle()
-            restaurantListDialog.show(supportFragmentManager,"RestaurantList")
-        }
-
-
-        // for filter restaurant
-        val toolbarButton = findViewById<Button>(R.id.restaurant_filter)
-        toolbarButton.setOnClickListener {
-            val filterDialog = RestaurantFilterDialog()
-            val bundle = Bundle()
-            filterDialog.show(supportFragmentManager, "RestaurantFilter")
-
-
-        }
-
-        mapViewModel = MapViewModel(fusedLocationProviderClient)
-
     }
 
 
@@ -131,7 +124,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
                 }
             }
     }
-    private lateinit var googlePlacesAPIService: GooglePlacesAPIService
+
     private fun fetchRestaurants() {
 
         // Fetch the user's location
@@ -231,9 +224,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         markerOptions = MarkerOptions()
         polylineOptions = PolylineOptions()
 
-
-
-
         getCurrentLocation()
     }
 
@@ -303,6 +293,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         markerOptions.position(location).title("You Are Here")
         lastMarker = mMap.addMarker(markerOptions)
         currLocation = location
+
+        navigationCheck(location)
+    }
+
+    private fun navigationCheck(location: LatLng) {
+        val intentValues = intent.getBooleanExtra("Navigate", false)
+        if (intentValues) {
+            val lat = intent.getDoubleExtra("Lat", 0.0)
+            val lng = intent.getDoubleExtra("Lng", 0.0)
+            getRoute(location, LatLng(lat,lng))
+            locationUpdates()
+        }
+
     }
 
 
@@ -318,8 +321,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         val route = ArrayList<LatLng>()
         var duration = ""
         var distance = ""
-        mapViewModel.routeLiveData.observe(this) {
 
+        mapViewModel.routeLiveData.observe(this) {
             it.routes[0].legs[0].steps.forEach { i ->
                 route.addAll(mapViewModel.decodePolyline(i.polyline.points))
             }
@@ -335,6 +338,4 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
             println("dbg: A Duration: $duration A Distance: $distance")
         }
     }
-
-
 }

@@ -13,6 +13,9 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
 import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -23,7 +26,8 @@ import java.io.IOException
 class MapViewModel(private val fusedLocationProviderClient: FusedLocationProviderClient): ViewModel() {
     private var currLocation: LatLng = LatLng(0.0,0.0)
     private lateinit var locationCallBack: LocationCallBack
-    private lateinit var locationUpdateCallback: LocationCallback
+
+    private var locationUpdateCallback: LocationCallback? = null
     private val locationMutLiveData = MutableLiveData<Location>()
     val locationLiveData: LiveData<Location> get() = locationMutLiveData
     private val routeMutLiveData = MutableLiveData<RouteData>()
@@ -50,50 +54,64 @@ class MapViewModel(private val fusedLocationProviderClient: FusedLocationProvide
 
     @SuppressLint("MissingPermission")
     fun getLocationUpdates(locationRequest: LocationRequest){
-
         locationUpdateCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 locationResult.let {
                     locationMutLiveData.value = locationResult.lastLocation
                 }
-                }
             }
-        fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationUpdateCallback, null)
+        }
+
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                fusedLocationProviderClient.requestLocationUpdates(
+                    locationRequest,
+                    locationUpdateCallback!!,
+                    null
+                )
+            }catch (_: Exception){}
+        }
     }
 
     fun stopLocationUpdates() {
-        fusedLocationProviderClient.removeLocationUpdates(locationUpdateCallback)
+        if (locationUpdateCallback != null) {
+            fusedLocationProviderClient.removeLocationUpdates(locationUpdateCallback!!)
+        }
     }
 
     fun getRoutes(url: String) {
-        val client = OkHttpClient()
-        val request = Request.Builder().url(url).build()
-        client.newCall(request).enqueue(object : Callback{
-            override fun onFailure(call: Call, e: IOException) {
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                if (!response.isSuccessful) {
-                    return
-                }
-                try {
-                    val res = response.body?.string()
-
-                    if (res.isNullOrBlank()) {
-                        return
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val client = OkHttpClient()
+                val request = Request.Builder().url(url).build()
+                client.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
                     }
-                    val data = Gson().fromJson(res, RouteData::class.java)
-                    val route = ArrayList<LatLng>()
-                    data.routes[0].legs[0].steps.forEach { i ->
-                        route.addAll(decodePolyline(i.polyline.points))
+
+                    override fun onResponse(call: Call, response: Response) {
+                        if (!response.isSuccessful) {
+                            return
+                        }
+                        try {
+                            val res = response.body?.string()
+
+                            if (res.isNullOrBlank()) {
+                                return
+                            }
+                            val data = Gson().fromJson(res, RouteData::class.java)
+                            val route = ArrayList<LatLng>()
+                            data.routes[0].legs[0].steps.forEach { i ->
+                                route.addAll(decodePolyline(i.polyline.points))
+                            }
+                            routeMutLiveData.postValue(data)
+                        } catch (e: IOException) {
+                            println("dbg: Result ERROR")
+                            e.printStackTrace()
+                        }
                     }
-                    routeMutLiveData.postValue(data)
-                } catch (e: IOException) {
-                    println("dbg: Result ERROR")
-                    e.printStackTrace()
-                }
-            }
-        })
+                })
+            }catch (_: IOException) {}
+        }
     }
 
 

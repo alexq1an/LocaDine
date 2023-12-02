@@ -15,6 +15,7 @@ import com.example.locadine.services.NotificationService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.messaging.FirebaseMessaging
 
+
 class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
     private lateinit var logoutButton: Button
     private lateinit var userInfo: TextView
@@ -26,6 +27,7 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
     private lateinit var demoFindNearbyRestaurantsButton: Button
     private lateinit var demoFetchSpecificRestaurantButton: Button
     private lateinit var restaurantPageButton: Button
+    private lateinit var favouriteButton: Button
 
     private val CHANNEL_ID = "localdine"
     private val CHANNEL_NAME = "Loca Dine"
@@ -50,7 +52,7 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
         demoFindNearbyRestaurantsButton = findViewById(R.id.demo_find_nearby_restaurants)
         demoFetchSpecificRestaurantButton = findViewById(R.id.demo_fetch_specific_restaurant)
         restaurantPageButton = findViewById(R.id.restaurant_info_button)
-
+        favouriteButton = findViewById(R.id.favourite_restaurant_button)
 
         val isLoggedIn = auth.currentUser != null
         if (isLoggedIn) {
@@ -70,7 +72,7 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
         }
 
         goToReviewsButton.setOnClickListener {
-            //startActivity(Intent(this, ReviewsActivity::class.java))
+            startActivity(Intent(this, ReviewsActivity::class.java))
         }
 
         goToChatbotButton.setOnClickListener {
@@ -93,6 +95,10 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
             val intent = Intent(this, RestaurantDetailsActivity::class.java)
             intent.putExtra("PLACE_ID", "ChIJBRXCcsB5hlQRewtNTQuhEoI")
             startActivity(intent)
+        }
+
+        favouriteButton.setOnClickListener {
+            startActivity(Intent(this, MyFavourites::class.java))
         }
     }
 
