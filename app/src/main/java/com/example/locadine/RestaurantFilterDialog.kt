@@ -20,7 +20,8 @@ class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener
 
         builder.setView(view).setTitle("Restaurant Filter")
         builder.setPositiveButton("Apply", this)
-        builder.setNegativeButton("Go Back", this)
+
+
 
 
         val distanceSpinner = view.findViewById<Spinner>(R.id.filter_spinner_distance)
@@ -44,6 +45,7 @@ class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener
                     "< 5000m" -> 5000
                     else -> 200
                 }
+
             }
             override fun onNothingSelected(parentView: AdapterView<*>?) {
                 // Do nothing here
@@ -56,11 +58,13 @@ class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener
                 val selectedDistance = resources.getStringArray(R.array.filter_rating)[position]
                 // pass selected rating to the activity
                 FilterSetting.rating = when (selectedDistance){
+                    "default" -> 0.0
                     "> 3.5" -> 3.5
                     "> 4.0" -> 4.0
                     "> 4.5" -> 4.5
-                    else -> 3.5
+                    else -> 0.0
                 }
+
             }
             override fun onNothingSelected(parentView: AdapterView<*>?) {
                 // Do nothing here
@@ -73,11 +77,12 @@ class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener
                 val selectedDistance = resources.getStringArray(R.array.filter_price)[position]
                 // pass selected price to the activity
                 FilterSetting.price = when (selectedDistance){
-                    "< 20>" -> 20.0
-                    "< 50" -> 50.0
-                    "< 100" -> 100.0
-                    "> 100" -> 1000.0
-                    else -> 20.0
+                    "$" -> 0
+                    "$$" -> 1
+                    "$$$" -> 2
+                    "$$$$" -> 3
+                    "$$$$$" -> 4
+                    else -> 1
                 }
             }
             override fun onNothingSelected(parentView: AdapterView<*>?) {
@@ -88,14 +93,18 @@ class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener
         return builder.create()
     }
 
+    override fun onDismiss(dialog: DialogInterface) {
+        super.onDismiss(dialog)
+        FilterSetting.updateTrigger = true // set it true for update later
+    }
+
+
     override fun onClick(dialog: DialogInterface, item: Int) {
         if (item == DialogInterface.BUTTON_POSITIVE) {
+
             Toast.makeText(activity, "Applied Filters", Toast.LENGTH_LONG).show()
         }
 
-        if (item == DialogInterface.BUTTON_NEGATIVE) {
-            Toast.makeText(activity, "Back to Map", Toast.LENGTH_LONG).show()
-        }
     }
 
     private fun getSavedDistance(value: Int, arrayId: Int): Int {
@@ -113,6 +122,7 @@ class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener
     private fun getSavedRating(value: Double, arrayId: Int): Int {
         val filterArray = resources.getStringArray(arrayId)
         val stringValue = when (value) {
+            0.0 -> "default"
             3.5 -> "> 3.5"
             4.0 -> "> 4.0"
             4.5 -> "> 4.5"
@@ -121,16 +131,18 @@ class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener
         return filterArray.indexOf(stringValue)
     }
 
-    private fun getSavedPrice(value: Double, arrayId: Int): Int {
+    private fun getSavedPrice(value: Int, arrayId: Int): Int {
         val filterArray = resources.getStringArray(arrayId)
         val stringValue = when (value) {
-            20.0 -> "< 20>"
-            50.0 -> "< 50"
-            100.0 -> "< 100"
-            1000.0 -> "> 100"
+            0 -> "$"
+            1 -> "$$"
+            2 -> "$$$"
+            3 -> "$$$$"
+            4 -> "$$$$$"
             else -> 20.0
         }
         return filterArray.indexOf(stringValue)
     }
+
 
 }
