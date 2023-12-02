@@ -197,13 +197,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
     }
 
     private fun filterByRating(restaurants: List<RestaurantInfo>, minRating: Double): List<RestaurantInfo> {
-        return restaurants.filter {it.rating!! > minRating }
-
+        return restaurants.filter { it.rating?.let { rating -> rating > minRating } ?: false }
     }
 
     private fun filterByPrice(restaurants: List<RestaurantInfo>, priceLevel: Int): List<RestaurantInfo> {
-        return restaurants.filter { it.price_level == priceLevel }
+        return restaurants.filter { it.price_level?.let { level -> level <= priceLevel } ?: false }
     }
+
 
     private fun moveCameraToFitMarkers(markerList: List<Marker>) {
         val builder = LatLngBounds.Builder()
