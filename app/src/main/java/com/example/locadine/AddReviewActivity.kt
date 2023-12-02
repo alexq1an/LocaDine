@@ -38,6 +38,8 @@ class AddReviewActivity : AppCompatActivity() {
         ratingBar.stepSize = 0.5f
         ratingBar.rating = 4f
 
+
+
         submitReviewButton = findViewById(R.id.submit_review_button)
         submitReviewButton.setOnClickListener {
             submitReview()
@@ -46,7 +48,7 @@ class AddReviewActivity : AppCompatActivity() {
 
     private fun submitReview() {
         val restaurantNameText = restaurantName.text.toString()
-        val reviewText = restaurantName.text.toString()
+        val reviewText = review.text.toString()
         val ratingValue = ratingBar.rating
 
         if (restaurantNameText.isBlank()) {
