@@ -20,6 +20,7 @@ class AddReviewActivity : AppCompatActivity() {
     private lateinit var review: EditText
     private lateinit var ratingBar: RatingBar
     private lateinit var submitReviewButton: Button
+    private lateinit var placeID:String
 
     private lateinit var db: FirebaseFirestore
     private lateinit var auth: FirebaseAuth
@@ -39,11 +40,15 @@ class AddReviewActivity : AppCompatActivity() {
         ratingBar.rating = 4f
 
 
-
         submitReviewButton = findViewById(R.id.submit_review_button)
         submitReviewButton.setOnClickListener {
             submitReview()
         }
+
+        placeID = intent.getStringExtra("PLACE_id").toString()
+        findViewById<EditText>(R.id.addreview_placeID).setText(placeID)
+
+        findViewById<EditText>(R.id.restaurant_name).setText(intent.getStringExtra("PLACE_name").toString())
     }
 
     private fun submitReview() {
@@ -51,24 +56,31 @@ class AddReviewActivity : AppCompatActivity() {
         val reviewText = review.text.toString()
         val ratingValue = ratingBar.rating
 
+
         if (restaurantNameText.isBlank()) {
             Toast.makeText(this, "Restaurant name cannot be empty", Toast.LENGTH_SHORT).show()
         } else if (reviewText.isBlank()) {
             Toast.makeText(this, "Review cannot be empty", Toast.LENGTH_SHORT).show()
         } else {
             val userEmail = auth.currentUser!!.email!!
-            val reviewData = Review(userEmail, restaurantNameText, reviewText, ratingValue, Date())
-            db.collection("reviews").add(reviewData).addOnCompleteListener(this, OnCompleteListener {
-                if (it.isSuccessful) {
-                    Toast.makeText(this, "Review added", Toast.LENGTH_SHORT).show()
-                    val intent = Intent(this, ReviewsActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    startActivity(intent)
-                } else {
-                    val errorMessage = it.exception?.message
-                    Toast.makeText(this, "Failed. $errorMessage", Toast.LENGTH_SHORT).show()
-                }
-            })
+            val reviewData = placeID?.let {
+                Review(userEmail, restaurantNameText, reviewText, ratingValue, Date(),
+                    it
+                )
+            }
+            if (reviewData != null) {
+                db.collection("reviews").add(reviewData).addOnCompleteListener(this, OnCompleteListener {
+                    if (it.isSuccessful) {
+                        Toast.makeText(this, "Review added", Toast.LENGTH_SHORT).show()
+                        val intent = Intent(this, ReviewsActivity::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        startActivity(intent)
+                    } else {
+                        val errorMessage = it.exception?.message
+                        Toast.makeText(this, "Failed. $errorMessage", Toast.LENGTH_SHORT).show()
+                    }
+                })
+            }
         }
     }
 }

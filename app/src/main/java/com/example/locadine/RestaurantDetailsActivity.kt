@@ -57,6 +57,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
     private lateinit var hoursSpinner: Spinner
     private lateinit var ratingBar: RatingBar
     private val restaurant_name = "Restaurant Name"
+    private lateinit var placeId: String
 
     private lateinit var restaurantID: String
     private lateinit var restaurant: RestaurantInfo
@@ -126,8 +127,11 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         googlePlacesAPIService = retrofit.create(GooglePlacesAPIService::class.java)
 
         // Extract PlaceID from Intent
+
+
         restaurantID = intent.getStringExtra("PLACE_ID")!!
         sendRequest(restaurantID)
+
 
         // this is declared twice?
         db = FirebaseFirestore.getInstance()
@@ -246,9 +250,12 @@ class RestaurantDetailsActivity : AppCompatActivity() {
 
     fun openAddReviewActivity() {
         val intent = Intent(this, AddReviewActivity::class.java)
-
-        startActivityForResult(intent, 1)
+        println("debug: placeID from detailsActivity: ${placeId}")
+        intent.putExtra("PLACE_id", placeId)
+        intent.putExtra("PLACE_name", textViewName.text)
+        startActivity(intent)
     }
+
 
     override fun onDestroy() {
         super.onDestroy()
@@ -259,7 +266,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
 
     private fun fetchReviews(restaurantName: String, placeID: String) {
         Toast.makeText(this, "${textViewName.text}", Toast.LENGTH_SHORT).show()
-        db.collection("reviews").whereEqualTo("restaurantName", restaurantName).get()
+        db.collection("reviews").whereEqualTo("placeID", placeId).get()
             .addOnCompleteListener(OnCompleteListener {
                 if (it.isSuccessful) {
                     val reviews =
