@@ -1,34 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical"
-    tools:context=".MainActivity">
+    android:fillViewport="true">
 
-    <TextView
-        android:id="@+id/user_info"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center" />
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="16dp"
+        tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/map_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Map" />
+        <TextView
+            android:id="@+id/user_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="User Information"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:padding="8dp" />
 
-    <Button
-        android:id="@+id/main_logout_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Logout" />
+        <Button
+            android:id="@+id/map_button"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="8dp"
+            android:text="Near by restaurants" />
 
-    <Button
-        android:id="@+id/favourite_restaurant_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Favourites" />
+        <Button
+            android:id="@+id/favourite_restaurant_button"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="8dp"
+            android:text="My favourites" />
 
-</LinearLayout>
+        <Button
+            style="@style/Widget.MaterialComponents.Button"
+            android:id="@+id/main_logout_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Logout"
+            android:layout_marginTop="8dp"
+            android:layout_marginHorizontal="20dp" />
+
+    </LinearLayout>
+</ScrollView>

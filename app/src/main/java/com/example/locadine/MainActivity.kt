@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
 
         val isLoggedIn = auth.currentUser != null
         if (isLoggedIn) {
-            userInfo.text = auth.currentUser!!.email
+            userInfo.text = "Welcome to Locadine, ${auth.currentUser!!.email}"
         } else {
             startActivity(Intent(this, LoginActivity::class.java))
         }
