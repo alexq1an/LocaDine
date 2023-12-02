@@ -1,15 +1,15 @@
 package com.example.locadine
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
-import android.location.Location
+import android.graphics.Bitmap
+import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
-import android.os.Build
-import com.google.android.gms.location.LocationServices
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -90,5 +90,12 @@ object Util {
 
     fun getPhotoUrl(photoReference: String): String {
         return "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${BuildConfig.MAPS_API_KEY}"
+    }
+
+
+    fun resizeIcon(icon: Bitmap): BitmapDescriptor {
+        val resizeBitmap = Bitmap.createScaledBitmap(icon, 200,200, false)
+        val resizeIcon = BitmapDescriptorFactory.fromBitmap(resizeBitmap)
+        return resizeIcon
     }
 }
