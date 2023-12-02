@@ -7,13 +7,10 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.Drawable
-import android.location.Location
-import android.location.LocationManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
@@ -40,7 +37,6 @@ import com.google.android.gms.maps.model.PolylineOptions
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import kotlin.properties.Delegates
 
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.LocationCallBack, GoogleMap.OnMarkerClickListener {
@@ -56,6 +52,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var mapViewModel: MapViewModel
     private lateinit var markerMap: HashMap<Marker, String>
+    private lateinit var googlePlacesAPIService: GooglePlacesAPIService
 
     private var polyLine: Polyline? = null
     private var currLocation: LatLng? = null
@@ -81,8 +78,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         val retrofit = Util.getGooglePlacesRetrofitInstance()
         googlePlacesAPIService = retrofit.create(GooglePlacesAPIService::class.java)
 
-
-        fetchRestaurants() // fetch restaurant when user enters the app
 
         findButton = binding.findButton
         findButton.setOnClickListener(){
@@ -130,7 +125,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
         // Clear existing markers
         mMap.clear()
-        getCurrentLocation()
         // Fetch nearby restaurants
         val call = googlePlacesAPIService.findNearbyRestaurants(curLocation, radiusInMeters, BuildConfig.MAPS_API_KEY)
         call.enqueue(object : Callback<NearbySearchResponse> {
@@ -141,55 +135,64 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
                 if (response.isSuccessful) {
                     val restaurants = response.body()!!.results
 
-                        // Apply filters
-                        val filterRatingLayer1 = filterByRating(restaurants, FilterSetting.rating) // apply filter layer by layer
-                         val filterPriceLayer2 = filterByPrice(filterRatingLayer1, FilterSetting.price) // next layer
+                    // Apply filters
+                    val filterRatingLayer1 = filterByRating(
+                        restaurants,
+                        FilterSetting.rating
+                    ) // apply filter layer by layer
+                    val filterPriceLayer2 =
+                        filterByPrice(filterRatingLayer1, FilterSetting.price) // next layer
 
 
-                        val markerList = mutableListOf<Marker>() // create a list for marker to calculate camera bound
-                        // Iterate through the list of restaurants and add markers
-                        filterPriceLayer2?.forEach { filterPriceLayer2 -> // for each restaurant after filter
-                            val restaurantLocation = filterPriceLayer2.geometry.location
-                            val restaurantLatLng = LatLng(restaurantLocation.lat, restaurantLocation.lng)
-                    val markerList = mutableListOf<Marker>() // create a list for marker to calculate camera bound
                     // Iterate through the list of restaurants and add markers
-                    restaurants?.forEach { restaurant ->
-                        val restaurantLocation = restaurant.geometry.location
-                        val restaurantLatLng = LatLng(restaurantLocation.lat, restaurantLocation.lng)
+                    filterPriceLayer2?.forEach { filterPriceLayer2 -> // for each restaurant after filter
+                        val restaurantLocation = filterPriceLayer2.geometry.location
+                        val restaurantLatLng =
+                            LatLng(restaurantLocation.lat, restaurantLocation.lng)
 
-                        val photoUrl = Util.getPhotoUrl(restaurant.photos!![0].photo_reference)
-                        Glide.with(this@MapsActivity).asBitmap().load(photoUrl).override(200, 200).into(object: CustomTarget<Bitmap>(){
-                            override fun onResourceReady(
-                                resource: Bitmap,
-                                transition: Transition<in Bitmap>?
-                            ) {
+                        val photoUrl =
+                            Util.getPhotoUrl(filterPriceLayer2.photos!![0].photo_reference)
+                        Glide.with(this@MapsActivity).asBitmap().load(photoUrl).override(200, 200)
+                            .into(object : CustomTarget<Bitmap>() {
+                                override fun onResourceReady(
+                                    resource: Bitmap,
+                                    transition: Transition<in Bitmap>?
+                                ) {
+                                    val resizedIcon = Util.resizeIcon(resource, 150, 150)
+                                    val marker = mMap.addMarker(
+                                        MarkerOptions()
+                                            .position(restaurantLatLng)
+                                            .title("${filterPriceLayer2.rating}  ${filterPriceLayer2.name}")
+                                            .icon(resizedIcon)
+                                    )
+                                    if (marker != null) { // Mandatory not null check to add marker to the list
+                                        markerMap[marker] = filterPriceLayer2.place_id
+                                    }
+                                }
 
-                                val resizedIcon = Util.resizeIcon(resource, 150, 150)
-                                val marker = mMap.addMarker(
-                                    MarkerOptions()
-                                        .position(restaurantLatLng)
-                                        .title("${restaurant.rating}  ${restaurant.name}")
-                                        .icon(resizedIcon)
+                                override fun onLoadCleared(placeholder: Drawable?) {
+                                }
+                            })
+                    }
 
-
-                        FilterSetting.restaurants = filterPriceLayer2 // pass all the data fetched into object for list data
-
-                        try{
-                            moveCameraToFitMarkers(markerList)
-                        } catch(e:Exception){
-                            Toast.makeText(applicationContext, "There is no desired restaurant with current filter setting in your region",Toast.LENGTH_LONG).show()
-                        }
-
-                    } else {
-                        Toast.makeText(applicationContext, "Problem with Showing Markers", Toast.LENGTH_SHORT).show()
+                    mMap.setOnMarkerClickListener(this@MapsActivity)
+                    FilterSetting.restaurants = filterPriceLayer2 // pass all the data fetched into object for list data
+                    try {
+                        moveCameraToFitMarkers(markerMap.keys.toList())
+                    } catch (e: Exception) {
+                        Toast.makeText(
+                            applicationContext,
+                            "There is no desired restaurant with current filter setting in your region",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
+            }
 
-                override fun onFailure(call: Call<NearbySearchResponse>, t: Throwable) {
-                    // Handle the failure case, such as a network error
-                }
-            })
-        }
+            override fun onFailure(call: Call<NearbySearchResponse>, t: Throwable) {
+                // Handle the failure case, such as a network error
+            }
+        })
     }
 
     private fun filterByRating(restaurants: List<RestaurantInfo>, minRating: Double): List<RestaurantInfo> {
@@ -227,9 +230,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         markerOptions = MarkerOptions()
         polylineOptions = PolylineOptions()
 
-
-
-
+        //fetchRestaurants() // fetch restaurant when user enters the app
         getCurrentLocation()
     }
 
@@ -299,6 +300,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         markerOptions.position(location).title("You Are Here").icon(resizedIcon).zIndex(100f)
         currentMarker = mMap.addMarker(markerOptions)
         currLocation = location
+
+        fetchRestaurants()
     }
 
 
