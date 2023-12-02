@@ -1,7 +1,6 @@
 package com.example.locadine
 
 import android.app.Dialog
-import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
 import android.view.View
@@ -58,7 +57,7 @@ class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener
                 val selectedDistance = resources.getStringArray(R.array.filter_rating)[position]
                 // pass selected rating to the activity
                 FilterSetting.rating = when (selectedDistance){
-                    "default" -> 0.0
+                    "0" -> 0.0
                     "> 3.5" -> 3.5
                     "> 4.0" -> 4.0
                     "> 4.5" -> 4.5

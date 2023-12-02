@@ -100,12 +100,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
             }
 
             // for filter restaurant
-            val toolbarButton = findViewById<Button>(R.id.restaurant_filter)
-            toolbarButton.setOnClickListener {
-                val filterDialog = RestaurantFilterDialog()
-                val bundle = Bundle()
-                filterDialog.show(supportFragmentManager, "RestaurantFilter")
-            }
+
+        }
+
+        val toolbarButton = findViewById<Button>(R.id.restaurant_filter)
+        toolbarButton.setOnClickListener {
+            val filterDialog = RestaurantFilterDialog()
+            val bundle = Bundle()
+            filterDialog.show(supportFragmentManager, "RestaurantFilter")
         }
     }
 
