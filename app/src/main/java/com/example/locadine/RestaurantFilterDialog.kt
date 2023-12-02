@@ -20,7 +20,6 @@ class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener
 
         builder.setView(view).setTitle("Restaurant Filter")
         builder.setPositiveButton("Apply", this)
-        builder.setNegativeButton("Go Back", this)
 
 
         val distanceSpinner = view.findViewById<Spinner>(R.id.filter_spinner_distance)
@@ -93,9 +92,6 @@ class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener
             Toast.makeText(activity, "Applied Filters", Toast.LENGTH_LONG).show()
         }
 
-        if (item == DialogInterface.BUTTON_NEGATIVE) {
-            Toast.makeText(activity, "Back to Map", Toast.LENGTH_LONG).show()
-        }
     }
 
     private fun getSavedDistance(value: Int, arrayId: Int): Int {

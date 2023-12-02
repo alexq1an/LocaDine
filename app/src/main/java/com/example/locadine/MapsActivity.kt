@@ -44,6 +44,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
     private lateinit var polylineOptions: PolylineOptions
     private lateinit var findRestaurantButton: Button
     private lateinit var mapSwitch: Button
+    private lateinit var restaurantList: Button
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var mapViewModel: MapViewModel
 
@@ -82,12 +83,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
         }
 
+        restaurantList = binding.listButton
+        restaurantList.setOnClickListener(){
+            val restaurantListDialog = RestaurantListDialog()
+            val bundle = Bundle()
+            restaurantListDialog.show(supportFragmentManager,"RestaurantList")
+        }
+
         // for filter restaurant
         val toolbarButton = findViewById<Button>(R.id.restaurant_filter)
         toolbarButton.setOnClickListener {
             val filterDialog = RestaurantFilterDialog()
             val bundle = Bundle()
-            filterDialog.show(supportFragmentManager, "CustomDialogFragment")
+            filterDialog.show(supportFragmentManager, "RestaurantFilter")
         }
 
         mapViewModel = MapViewModel(fusedLocationProviderClient)
@@ -150,7 +158,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
                         try{
                             moveCameraToFitMarkers(markerList)
                         } catch(e:Exception){
-                            Toast.makeText(applicationContext, "There is no desired restaurant in ur region",Toast.LENGTH_SHORT).show()
+                            Toast.makeText(applicationContext, "There is no desired restaurant with current filter setting in your region",Toast.LENGTH_SHORT).show()
                         }
 
                     } else {
