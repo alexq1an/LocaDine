@@ -77,7 +77,6 @@ class RestaurantDetailsActivity : AppCompatActivity() {
 
     private val coroutineScope = MainScope()
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -98,8 +97,6 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         ratingBar.stepSize = 0.5f
         ratingBar.rating = 4f
 
-        //selectedHoursTextView = findViewById(R.id.selectedHoursTextView)
-
         buttonSubmitReview = findViewById(R.id.buttonSubmitReview)
 
         imageView1 = findViewById(R.id.imageViewBig)
@@ -111,7 +108,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         arrayList = ArrayList()
         arrayAdapter = ReviewListAdapter(this, arrayList)
         reviewListView.adapter = arrayAdapter
-
+        Util.setListViewHeightBasedOnChildren(reviewListView)
 
         arrayListGoogle = ArrayList()
         arrayAdapterGoogle = GoogleReviewListAdapter(this, arrayListGoogle)
@@ -119,27 +116,15 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         recyclerView.adapter = arrayAdapterGoogle
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        /*
-        reviewListViewGoogle.adapter = arrayAdapterGoogle
-         */
-
         val retrofit = Util.getGooglePlacesRetrofitInstance()
         googlePlacesAPIService = retrofit.create(GooglePlacesAPIService::class.java)
-
-        // Extract PlaceID from Intent
 
         placeId = intent.getStringExtra("PLACE_ID")!!
 
         restaurantID = intent.getStringExtra("PLACE_ID")!!
         sendRequest(restaurantID)
 
-
-        // this is declared twice?
-        db = FirebaseFirestore.getInstance()
-
         checkIfFavourite()
-        //fetchReviews()
-
 
         lifecycleScope.launch(Dispatchers.Main) {
             ArrayAdapter.createFromResource(
@@ -249,7 +234,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         })
     }
 
-    fun openAddReviewActivity() {
+    private fun openAddReviewActivity() {
         val intent = Intent(this, AddReviewActivity::class.java)
         println("debug: placeID from detailsActivity: ${placeId}")
         intent.putExtra("PLACE_id", placeId)
@@ -263,10 +248,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         coroutineScope.cancel()
     }
 
-
-
     private fun fetchReviews(restaurantName: String, placeID: String) {
-        Toast.makeText(this, "${textViewName.text}", Toast.LENGTH_SHORT).show()
         db.collection("reviews").whereEqualTo("placeID", placeId).get()
             .addOnCompleteListener(OnCompleteListener {
                 if (it.isSuccessful) {
@@ -275,6 +257,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
                     val sortedReviews = reviews.sortedByDescending { review -> review.createdAt }
                     arrayAdapter.replace(sortedReviews)
                     arrayAdapter.notifyDataSetChanged()
+                    Util.setListViewHeightBasedOnChildren(reviewListView)
                 } else {
                     val errorMessage = it.exception?.message
                     Toast.makeText(
@@ -329,9 +312,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
                 }
     }
 
-
-
-        private fun getRestaurantSummary(restaurant: RestaurantInfo): String {
+    private fun getRestaurantSummary(restaurant: RestaurantInfo): String {
         var result = ""
 
         //result += "Summary : ${restaurant.types}\n}"

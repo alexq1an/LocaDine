@@ -2,6 +2,7 @@ package com.example.locadine
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Location
@@ -11,6 +12,7 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.example.locadine.ViewModels.MapViewModel
+import com.example.locadine.ViewModels.RestaurantInfoViewModel
 import com.example.locadine.api.GooglePlacesAPIService
 
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -27,6 +29,7 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.Polyline
@@ -52,6 +55,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
     private lateinit var googlePlacesAPIService: GooglePlacesAPIService
 
+    private lateinit var chatbotButton: Button
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -62,6 +67,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+        chatbotButton = findViewById(R.id.chatbot_button)
+        chatbotButton.setOnClickListener {
+            startActivity(Intent(this, ChatbotActivity::class.java))
+        }
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         mapViewModel = MapViewModel(fusedLocationProviderClient)
@@ -93,7 +103,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         val toolbarButton = findViewById<Button>(R.id.restaurant_filter)
         toolbarButton.setOnClickListener {
             val filterDialog = RestaurantFilterDialog(this)
-            val bundle = Bundle()
             filterDialog.show(supportFragmentManager, "RestaurantFilter")
         }
 
@@ -137,6 +146,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
                 ) {
                     if (response.isSuccessful) {
                         val restaurants = response.body()!!.results
+                        RestaurantInfoViewModel.restaurantInfoList = restaurants
 
                         // Apply filters
                         val filterRatingLayer1 = filterByRating(restaurants, FilterSetting.rating) // apply filter layer by layer
@@ -155,6 +165,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
                             )
                             if (marker != null) { // Mandatory not null check to add marker to the list
+                                marker.tag = filterPriceLayer2.place_id
                                 markerList.add(marker)
                             }
                         }
@@ -211,6 +222,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
+        mMap.setOnInfoWindowClickListener {
+            val placeId = it.tag as? String
+            if (placeId != null) {
+                val intent = Intent(this, RestaurantDetailsActivity::class.java)
+                intent.putExtra("PLACE_ID", placeId)
+                startActivity(intent)
+            }
+        }
+
         if (mMap.mapType == null) {
             mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
         }
@@ -245,7 +265,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
     private var lastMarker: Marker? = null
 
     // This Tracks the device in intervals and marks the location on the map
-    fun locationUpdates() {
+    private fun locationUpdates() {
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -261,13 +281,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000).build()
         mapViewModel.getLocationUpdates(locationRequest)
         mapViewModel.locationLiveData.observe(this) { location ->
-            println("dbg: Update $location")
             val position = LatLng(location.latitude , location.longitude)
             lastMarker?.remove()
             markerOptions.position(position).title("You are here")
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
             lastMarker = mMap.addMarker(markerOptions)
-            val cameraUpdate = CameraUpdateFactory.newLatLngZoom(position, 17f)
-            mMap.animateCamera(cameraUpdate)
         }
     }
 
@@ -285,6 +303,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         println("dbg: Current $location")
         lastMarker?.remove()
         markerOptions.position(location).title("You Are Here")
+            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
         lastMarker = mMap.addMarker(markerOptions)
         currLocation = location
 

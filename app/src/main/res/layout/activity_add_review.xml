@@ -14,13 +14,6 @@
         android:ems="10"
         android:hint="Restaurant name"
         android:inputType="text" />
-    <EditText
-        android:id="@+id/addreview_placeID"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="Place ID"
-        android:inputType="text" />
 
     <EditText
         android:id="@+id/restaurant_review"
