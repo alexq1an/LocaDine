@@ -1,13 +1,11 @@
 package com.example.locadine
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
-import android.widget.EditText
 import android.widget.ImageView
 import android.widget.ListView
 import android.widget.RatingBar
@@ -26,6 +24,7 @@ import com.example.locadine.pojos.GetPlaceDetailsResponse
 import com.example.locadine.pojos.GoogleReview
 import com.example.locadine.pojos.RestaurantInfo
 import com.example.locadine.pojos.Review
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers

@@ -108,6 +108,13 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="5dp"
             android:text="Favourite" />
+
+        <Button
+            android:id="@+id/navigate_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Navigate" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -118,11 +125,7 @@
             android:textColor="#238AC1" />
 
 
-        <Button
-            android:id="@+id/navigate_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Navigate" />
+
 
         <ListView
             android:id="@+id/review_list_firebase"
