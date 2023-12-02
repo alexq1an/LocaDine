@@ -3,7 +3,6 @@ package com.example.locadine
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.BaseAdapter
 import android.widget.Button
 import android.widget.ListView
 import android.widget.Toast
@@ -55,3 +54,6 @@ class ReviewsActivity : AppCompatActivity() {
         })
     }
 }
+
+// attach review to placeID and retrieve based on placeID
+// then, when submit review, it will be attached to the placeID

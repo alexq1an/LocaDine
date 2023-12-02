@@ -4,10 +4,14 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
+import com.example.locadine.ViewModels.RestaurantInfoViewModel
 import com.example.locadine.api.GooglePlacesAPIService
 import com.example.locadine.pojos.NearbySearchResponse
 import com.example.locadine.pojos.RestaurantInfo
+import okhttp3.internal.notifyAll
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -40,6 +44,8 @@ class DemoFindNearbyRestaurantsActivity : AppCompatActivity() {
                 if (response.isSuccessful) {
                     val restaurants = response.body()!!.results
                     restaurantsSummary.text = getRestaurantsSummary(restaurants)
+
+                    RestaurantInfoViewModel.restaurantInfoList = restaurants
 
                     val photoUrl = Util.getPhotoUrl(restaurants[0].photos!![0].photo_reference)
                     Glide.with(this@DemoFindNearbyRestaurantsActivity)

@@ -71,6 +71,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         mapFragment.getMapAsync(this)
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+        mapViewModel = MapViewModel(fusedLocationProviderClient)
 
         markerMap = HashMap()
 
@@ -78,41 +79,34 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         val retrofit = Util.getGooglePlacesRetrofitInstance()
         googlePlacesAPIService = retrofit.create(GooglePlacesAPIService::class.java)
 
-
         findButton = binding.findButton
-        findButton.setOnClickListener(){
+        findButton.setOnClickListener() {
             fetchRestaurants()
-        }
+            mapSwitch = binding.mapSwitch
+            mapSwitch.setOnClickListener() {
+                if (mMap.mapType == GoogleMap.MAP_TYPE_NORMAL) {
+                    mMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
+                } else {
+                    mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
+                }
 
-        mapSwitch = binding.mapSwitch
-        mapSwitch.setOnClickListener(){
-            if(mMap.mapType == GoogleMap.MAP_TYPE_NORMAL){
-                mMap.mapType= GoogleMap.MAP_TYPE_SATELLITE
-            }else{
-                mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
             }
 
+            restaurantList = binding.listButton
+            restaurantList.setOnClickListener() {
+                val restaurantListDialog = RestaurantListDialog()
+                val bundle = Bundle()
+                restaurantListDialog.show(supportFragmentManager, "RestaurantList")
+            }
+
+            // for filter restaurant
+            val toolbarButton = findViewById<Button>(R.id.restaurant_filter)
+            toolbarButton.setOnClickListener {
+                val filterDialog = RestaurantFilterDialog()
+                val bundle = Bundle()
+                filterDialog.show(supportFragmentManager, "RestaurantFilter")
+            }
         }
-
-        restaurantList = binding.listButton
-        restaurantList.setOnClickListener(){
-            val restaurantListDialog = RestaurantListDialog()
-            val bundle = Bundle()
-            restaurantListDialog.show(supportFragmentManager,"RestaurantList")
-        }
-
-
-        // for filter restaurant
-        val toolbarButton = findViewById<Button>(R.id.restaurant_filter)
-        toolbarButton.setOnClickListener {
-            val filterDialog = RestaurantFilterDialog()
-            val bundle = Bundle()
-            filterDialog.show(supportFragmentManager, "RestaurantFilter")
-
-        }
-
-        mapViewModel = MapViewModel(fusedLocationProviderClient)
-
     }
 
 
@@ -230,9 +224,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         markerOptions = MarkerOptions()
         polylineOptions = PolylineOptions()
 
-        //fetchRestaurants() // fetch restaurant when user enters the app
         getCurrentLocation()
     }
+
 
     //gets the current location of device Once
     private fun getCurrentLocation() {
@@ -302,6 +296,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         currLocation = location
 
         fetchRestaurants()
+
+        navigationCheck(location)
+    }
+
+    private fun navigationCheck(location: LatLng) {
+        val intentValues = intent.getBooleanExtra("Navigate", false)
+        if (intentValues) {
+            val lat = intent.getDoubleExtra("Lat", 0.0)
+            val lng = intent.getDoubleExtra("Lng", 0.0)
+            getRoute(location, LatLng(lat,lng))
+            locationUpdates()
+        }
+
     }
 
 

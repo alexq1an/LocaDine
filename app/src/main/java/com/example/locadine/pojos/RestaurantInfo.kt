@@ -1,5 +1,7 @@
 package com.example.locadine.pojos
 
+import java.util.Date
+
 data class NearbySearchResponse(
     val results: List<RestaurantInfo>,
     val status: String
@@ -22,7 +24,9 @@ data class RestaurantInfo(
     val user_ratings_total: Int?,
     val vicinity: String,
     val price_level: Int?,
-    val reviews: List<GoogleReview>?
+    val reviews: List<GoogleReview>?,
+    val website : String,
+    val formatted_phone_number : String,
 )
 
 data class Geometry(
@@ -52,8 +56,12 @@ data class Photo(
 )
 
 data class GoogleReview(
+    val restaurantName: String,
+    val review : String,
     val author_name: String,
     val author_url: String,
+    val reviewerEmail:  String,
+    val createdAt : String,
     val language: String,
     val original_language: String,
     val profile_photo_url: String,
@@ -61,5 +69,6 @@ data class GoogleReview(
     val relative_time_description: String,
     val text: String,
     val time: Long,
-    val translated: Boolean
+    val translated: Boolean,
+    val date: Date,
 )
