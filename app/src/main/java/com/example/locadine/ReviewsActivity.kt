@@ -54,3 +54,6 @@ class ReviewsActivity : AppCompatActivity() {
         })
     }
 }
+
+// attach review to placeID and retrieve based on placeID
+// then, when submit review, it will be attached to the placeID
