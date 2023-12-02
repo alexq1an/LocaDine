@@ -92,15 +92,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
             }
 
-            restaurantList = binding.listButton
-            restaurantList.setOnClickListener() {
-                val restaurantListDialog = RestaurantListDialog()
-                val bundle = Bundle()
-                restaurantListDialog.show(supportFragmentManager, "RestaurantList")
-            }
+
 
             // for filter restaurant
 
+        }
+
+        restaurantList = binding.listButton
+        restaurantList.setOnClickListener() {
+            val restaurantListDialog = RestaurantListDialog()
+            val bundle = Bundle()
+            restaurantListDialog.show(supportFragmentManager, "RestaurantList")
         }
 
         val toolbarButton = findViewById<Button>(R.id.restaurant_filter)
