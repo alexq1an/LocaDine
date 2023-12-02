@@ -93,8 +93,8 @@ object Util {
     }
 
 
-    fun resizeIcon(icon: Bitmap): BitmapDescriptor {
-        val resizeBitmap = Bitmap.createScaledBitmap(icon, 200,200, false)
+    fun resizeIcon(icon: Bitmap, width: Int, height: Int): BitmapDescriptor {
+        val resizeBitmap = Bitmap.createScaledBitmap(icon, width,height, false)
         val resizeIcon = BitmapDescriptorFactory.fromBitmap(resizeBitmap)
         return resizeIcon
     }

@@ -1,17 +1,20 @@
 package com.example.locadine
 
 import android.Manifest
-import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.location.Location
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.example.locadine.ViewModels.MapViewModel
 import com.example.locadine.api.GooglePlacesAPIService
 import com.example.locadine.databinding.ActivityMapsBinding
@@ -35,7 +38,7 @@ import retrofit2.Callback
 import retrofit2.Response
 
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.LocationCallBack {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.LocationCallBack, GoogleMap.OnMarkerClickListener {
 
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityMapsBinding
@@ -46,6 +49,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
     private lateinit var mapSwitch: Button
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var mapViewModel: MapViewModel
+    private lateinit var googlePlacesAPIService: GooglePlacesAPIService
+    private lateinit var markerMap: HashMap<Marker, String>
 
     private var polyLine: Polyline? = null
     private var currLocation: LatLng? = null
@@ -63,6 +68,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         mapFragment.getMapAsync(this)
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+
+        markerMap = HashMap()
 
         // Activate Google Place API
         val retrofit = Util.getGooglePlacesRetrofitInstance()
@@ -94,34 +101,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         mapViewModel = MapViewModel(fusedLocationProviderClient)
 
     }
-    @SuppressLint("MissingPermission")
-    fun requestLocation(callback: (latitude: Double, longitude: Double) -> Unit) {
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        fusedLocationClient.lastLocation
-            .addOnSuccessListener { location: Location? ->
-                // Got last known location
-                if (location != null) {
-                    val latitude = location.latitude
-                    val longitude = location.longitude
-                    // Call the callback with the location
-                    callback(latitude, longitude)
-                }
-            }
-    }
-    private lateinit var googlePlacesAPIService: GooglePlacesAPIService
+
     private fun fetchRestaurants() {
 
     // Fetch the user's location
-
-
         // Now that we have the user's location, proceed to fetch nearby restaurants
         val radiusInMeters = FilterSetting.distance
         val curLocation = "${currLocation?.latitude},${currLocation?.longitude}"
 
         // Clear existing markers
         mMap.clear()
-
+        getCurrentLocation()
         // Fetch nearby restaurants
         val call = googlePlacesAPIService.findNearbyRestaurants(curLocation, radiusInMeters, BuildConfig.MAPS_API_KEY)
         call.enqueue(object : Callback<NearbySearchResponse> {
@@ -138,21 +129,37 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
                         val restaurantLocation = restaurant.geometry.location
                         val restaurantLatLng = LatLng(restaurantLocation.lat, restaurantLocation.lng)
 
-                        val marker = mMap.addMarker(
-                            MarkerOptions()
-                                .position(restaurantLatLng)
-                                .title("${restaurant.rating}  ${restaurant.name}")
+                        val photoUrl = Util.getPhotoUrl(restaurant.photos!![0].photo_reference)
+                        Glide.with(this@MapsActivity).asBitmap().load(photoUrl).override(200, 200).into(object: CustomTarget<Bitmap>(){
+                            override fun onResourceReady(
+                                resource: Bitmap,
+                                transition: Transition<in Bitmap>?
+                            ) {
 
-                        )
-                        if (marker != null) { // Mandatory not null check to add marker to the list
-                            markerList.add(marker)
-                        }
+                                val resizedIcon = Util.resizeIcon(resource, 150, 150)
+                                val marker = mMap.addMarker(
+                                    MarkerOptions()
+                                        .position(restaurantLatLng)
+                                        .title("${restaurant.rating}  ${restaurant.name}")
+                                        .icon(resizedIcon)
+
+                                )
+                                if (marker != null) { // Mandatory not null check to add marker to the list
+                                    markerMap[marker] = restaurant.place_id
+                                }
+                                try{
+                                    moveCameraToFitMarkers(markerList)
+                                } catch(e:Exception){
+                                    Toast.makeText(applicationContext, "There is no desired restaurant in ur region",Toast.LENGTH_SHORT).show()
+                                }
+                            }
+
+                            override fun onLoadCleared(placeholder: Drawable?) {
+                            }
+                        })
+                        mMap.setOnMarkerClickListener(this@MapsActivity)
                     }
-                    try{
-                        moveCameraToFitMarkers(markerList)
-                    } catch(e:Exception){
-                        Toast.makeText(applicationContext, "There is no desired restaurant in ur region",Toast.LENGTH_SHORT).show()
-                    }
+
 
                 } else {
                     Toast.makeText(applicationContext, "Problem with Showing Markers", Toast.LENGTH_SHORT).show()
@@ -231,12 +238,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000).build()
         mapViewModel.getLocationUpdates(locationRequest)
         val icon: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.person_here)
-        val resizedIcon = Util.resizeIcon(icon)
+        val resizedIcon = Util.resizeIcon(icon, 200, 200)
         mapViewModel.locationLiveData.observe(this) { location ->
             println("dbg: Update $location")
             val position = LatLng(location.latitude , location.longitude)
             currentMarker?.remove()
-            markerOptions.position(position).title("You are here").icon(resizedIcon)
+            markerOptions.position(position).title("You are here").icon(resizedIcon).zIndex(100f)
             currentMarker = mMap.addMarker(markerOptions)
             val cameraUpdate = CameraUpdateFactory.newLatLngZoom(position, 17f)
             mMap.animateCamera(cameraUpdate)
@@ -257,8 +264,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         println("dbg: Current $location")
         currentMarker?.remove()
         val icon: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.person_here)
-        val resizedIcon = Util.resizeIcon(icon)
-        markerOptions.position(location).title("You Are Here").icon(resizedIcon)
+        val resizedIcon = Util.resizeIcon(icon, 200, 200)
+        markerOptions.position(location).title("You Are Here").icon(resizedIcon).zIndex(100f)
         currentMarker = mMap.addMarker(markerOptions)
         currLocation = location
     }
@@ -290,7 +297,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
             polylineOptions.color(Color.BLUE).width(20F)
             polyLine = mMap.addPolyline(polylineOptions)
 
-            println("dbg: A Duration: $duration A Distance: $distance")
         }
+    }
+
+    override fun onMarkerClick(marker: Marker): Boolean {
+        //val position = marker.position
+        val place_id = markerMap[marker]
+        val intent = Intent(this, RestaurantDetailsActivity::class.java)
+        intent.putExtra("PLACE_ID", place_id)
+        startActivity(intent)
+        return true
     }
 }
