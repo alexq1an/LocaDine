@@ -339,7 +339,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
                 "restaurantPicture" to Util.getPhotoUrl(restaurant.photos!![0].photo_reference),
             )
         )
-        favouriteButton.text = "Unfavourite"
+        favouriteButton.text = "Remove as favourite"
         favouriteFlag = true
     }
 
@@ -353,7 +353,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
                 ref.delete().addOnCompleteListener(this) {
                     if (it.isSuccessful) {
                         Toast.makeText(this, "Removed from favourites!", Toast.LENGTH_SHORT).show()
-                        favouriteButton.text = "Favourite"
+                        favouriteButton.text = "Save as favourite"
                         favouriteFlag = false
                     } else {
                         println("Document not found")
