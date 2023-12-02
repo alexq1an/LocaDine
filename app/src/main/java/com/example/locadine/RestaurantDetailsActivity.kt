@@ -128,6 +128,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
 
         // Extract PlaceID from Intent
 
+        placeId = intent.getStringExtra("PLACE_ID")!!
 
         restaurantID = intent.getStringExtra("PLACE_ID")!!
         sendRequest(restaurantID)
