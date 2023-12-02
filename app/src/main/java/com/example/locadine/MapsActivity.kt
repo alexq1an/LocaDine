@@ -63,14 +63,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-
-
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+        mapViewModel = MapViewModel(fusedLocationProviderClient)
 
         // Activate Google Place API
         val retrofit = Util.getGooglePlacesRetrofitInstance()
         googlePlacesAPIService = retrofit.create(GooglePlacesAPIService::class.java)
-
 
         fetchRestaurants() // fetch restaurant when user enters the app
 
@@ -100,11 +98,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
                 val filterDialog = RestaurantFilterDialog()
                 val bundle = Bundle()
                 filterDialog.show(supportFragmentManager, "RestaurantFilter")
-
-
             }
-
-            mapViewModel = MapViewModel(fusedLocationProviderClient)
         }
     }
 
