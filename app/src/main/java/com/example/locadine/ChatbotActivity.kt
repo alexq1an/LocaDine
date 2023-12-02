@@ -6,8 +6,10 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.locadine.ViewModels.RestaurantInfoViewModel
 import com.example.locadine.adapters.MessageAdapter
 import com.example.locadine.api.OpenAIApiService
 import com.example.locadine.pojos.Message
@@ -15,6 +17,7 @@ import com.example.locadine.pojos.OpenAIMessage
 import com.example.locadine.pojos.OpenAIRequest
 import com.example.locadine.pojos.OpenAIResponse
 import com.example.locadine.pojos.OpenAIRoleType
+import com.example.locadine.pojos.RestaurantInfo
 import com.example.locadine.pojos.SenderType
 import okhttp3.OkHttpClient
 import retrofit2.Call
@@ -59,7 +62,12 @@ class ChatbotActivity : AppCompatActivity() {
 
         val retrofit = Util.getOpenAIRetrofitInstance()
         openAIApiService = retrofit.create(OpenAIApiService::class.java)
+
+        addMessageAndScroll(Message("Hi there, I am a chatbot powered by OpenAI's GTP 3.5 model. " +
+                "I have access to details of restaurants near you such as name, price level" +
+                ", average rating, and top reviews. Ask me any questions and I'll try my best to answer :)", SenderType.BOT))
     }
+
     private fun sendMessage(userMessage: String) {
         addMessageAndScroll(Message(userMessage, SenderType.USER))
 
@@ -102,7 +110,7 @@ class ChatbotActivity : AppCompatActivity() {
     }
 
     private fun getPrePrompt(): String {
-        return getChatHistory() + "Create an answer that uses 50 tokens or less\n\n"
+        return getRestaurantInfo() + getChatHistory() + "Create an answer that uses an average of 50 tokens but if needed you can use a maximum of 150 tokens\n\n"
     }
 
     private fun getChatHistory(): String {
@@ -115,5 +123,58 @@ class ChatbotActivity : AppCompatActivity() {
             }
         }
         return history
+    }
+
+    private fun getRestaurantInfo(): String {
+        val restaurants = RestaurantInfoViewModel.restaurantInfoList
+        return if (restaurants.isNotEmpty()) {
+            "Here is information about nearby restaurants:\n\n" + getRestaurantsSummary(restaurants)
+        } else {
+            ""
+        }
+    }
+
+    private fun getRestaurantsSummary(restaurants: List<RestaurantInfo>): String {
+        var result = ""
+
+        restaurants.forEach {
+            result += "Name: ${it.name}\n"
+            result += "Open now? ${it.opening_hours?.open_now}\n"
+            result += "Price level: ${priceLevelToText(it.price_level)}\n"
+            result += "Business status: ${it.business_status}\n"
+            result += "Average rating: ${it.rating}\n"
+            result += "Number of ratings: ${it.user_ratings_total}\n"
+            result += "Reviews:\n" + getReviews(it)
+        }
+
+        return result
+    }
+
+    private fun getReviews(restaurant: RestaurantInfo): String {
+        var result = ""
+
+        for (i in 0..5) {
+            if (restaurant.reviews == null || restaurant.reviews!!.size <= i) {
+                break
+            }
+            val review = restaurant.reviews!![i]
+            result += "${review.author_name} gave this restaurant a ${review.rating} stars review with the following comment: ${review.text}\n\n"
+        }
+
+        return result
+    }
+
+    private fun priceLevelToText(level: Int?) : String {
+        if (level == null) {
+            return "Unknown"
+        } else if (level == 1) {
+            return "Cheap"
+        } else if (level == 2) {
+            return "Moderate"
+        } else if (level == 3) {
+            return "Expensive"
+        } else {
+            return "Very expensive"
+        }
     }
 }
