@@ -1,21 +1,29 @@
 package com.example.locadine
 
 import android.content.Intent
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.ListView
+import android.widget.RatingBar
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.example.locadine.adapters.GoogleReviewListAdapter
 import com.example.locadine.adapters.ReviewListAdapter
 import com.example.locadine.api.GooglePlacesAPIService
 import com.example.locadine.pojos.GetPlaceDetailsResponse
+import com.example.locadine.pojos.GoogleReview
 import com.example.locadine.pojos.RestaurantInfo
 import com.example.locadine.pojos.Review
 import com.google.firebase.auth.FirebaseAuth
@@ -31,8 +39,6 @@ import retrofit2.Response
 
 // need rating bar that shows stars for price and rating
 // organize summary to be more readable
-// make review relevant to only restaurant
-// add favourite button
 // make reviews scrollable
 // make hours accurate to real store hours
 
@@ -50,12 +56,20 @@ class RestaurantDetailsActivity : AppCompatActivity() {
     private lateinit var imageView2: ImageView
     private lateinit var imageView3: ImageView
     private lateinit var hoursSpinner: Spinner
+    private lateinit var ratingBar: RatingBar
+    private val restaurant_name = "Restaurant Name"
+
     private lateinit var restaurantID: String
     private lateinit var restaurant: RestaurantInfo
     // Reviews
     private lateinit var arrayList: ArrayList<Review>
     private lateinit var arrayAdapter: ReviewListAdapter
     private lateinit var reviewListView: ListView
+
+    private lateinit var arrayListGoogle: ArrayList<GoogleReview>
+    private lateinit var arrayAdapterGoogle : GoogleReviewListAdapter
+
+
     private lateinit var db: FirebaseFirestore
     private lateinit var fbAuth: FirebaseAuth
     private lateinit var googlePlacesAPIService: GooglePlacesAPIService
@@ -79,7 +93,10 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         hoursSpinner = findViewById(R.id.hoursSpinner)
         restaurantsSummary = findViewById(R.id.textViewSummary)
         favouriteButton = findViewById(R.id.favourite_button)
+        ratingBar = findViewById(R.id.ratingBar)
         navigateButton = findViewById(R.id.navigate_button)
+        ratingBar.stepSize = 0.5f
+        ratingBar.rating = 4f
 
         //selectedHoursTextView = findViewById(R.id.selectedHoursTextView)
 
@@ -89,11 +106,22 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         imageView2 = findViewById(R.id.imageViewSmall1)
         imageView3 = findViewById(R.id.imageViewSmall2)
 
-        reviewListView = findViewById(R.id.review_list_restaurant)
+        reviewListView = findViewById(R.id.review_list_firebase)
 
         arrayList = ArrayList()
         arrayAdapter = ReviewListAdapter(this, arrayList)
         reviewListView.adapter = arrayAdapter
+
+
+        arrayListGoogle = ArrayList()
+        arrayAdapterGoogle = GoogleReviewListAdapter(this, arrayListGoogle)
+        val recyclerView: RecyclerView = findViewById(R.id.google_review_list)
+        recyclerView.adapter = arrayAdapterGoogle
+        recyclerView.layoutManager = LinearLayoutManager(this)
+
+        /*
+        reviewListViewGoogle.adapter = arrayAdapterGoogle
+         */
 
         val retrofit = Util.getGooglePlacesRetrofitInstance()
         googlePlacesAPIService = retrofit.create(GooglePlacesAPIService::class.java)
@@ -105,8 +133,8 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         // this is declared twice?
         db = FirebaseFirestore.getInstance()
 
-        fetchReviews()
         checkIfFavourite()
+        //fetchReviews()
 
 
         lifecycleScope.launch(Dispatchers.Main) {
@@ -133,7 +161,6 @@ class RestaurantDetailsActivity : AppCompatActivity() {
 
             buttonSubmitReview.setOnClickListener {
                 openAddReviewActivity()
-
             }
 
         }
@@ -166,8 +193,6 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         }
     }
 
-
-
     private fun sendRequest(placeId: String) {
         val call = googlePlacesAPIService.getPlaceDetails(placeId, BuildConfig.MAPS_API_KEY)
         call.enqueue(object : Callback<GetPlaceDetailsResponse> {
@@ -175,6 +200,13 @@ class RestaurantDetailsActivity : AppCompatActivity() {
                 if (response.isSuccessful) {
                     restaurant = response.body()!!.result
                     restaurantsSummary.text = getRestaurantSummary(restaurant)  // separate summary
+                    textViewName.text = restaurant.name
+                    textViewAddress.text = restaurant.vicinity
+                    ratingBar.rating = restaurant.rating?.toFloat() ?: 3f
+                    restaurant_name == restaurant.name
+                    textViewPhoneNumber.text = restaurant.formatted_phone_number
+                    textViewWebsite.text = "Website : ${restaurant.website}"
+
 
                     val photoUrl1 = Util.getPhotoUrl(restaurant.photos!![0].photo_reference)
                     Glide.with(this@RestaurantDetailsActivity)
@@ -191,6 +223,15 @@ class RestaurantDetailsActivity : AppCompatActivity() {
                     Glide.with(this@RestaurantDetailsActivity)
                         .load(photoUrl3)
                         .into(imageView3)
+
+                    val googleReviews = response.body()?.result?.reviews
+                    googleReviews?.let {
+                        arrayListGoogle.clear()
+                        arrayListGoogle.addAll(it)
+                        arrayAdapterGoogle.notifyDataSetChanged()
+                    }
+
+                    fetchReviews(restaurant.name, placeId)
                 } else {
                     // Handle error
                     Toast.makeText(this@RestaurantDetailsActivity, "Error fetching restaurant details", Toast.LENGTH_SHORT).show()
@@ -216,34 +257,88 @@ class RestaurantDetailsActivity : AppCompatActivity() {
     }
 
 
-    private fun fetchReviews() {
-        db.collection("reviews").get().addOnCompleteListener {
-            if (it.isSuccessful) {
-                val reviews =
-                    it.result.documents.map { doc -> Review(doc.data as Map<String, Any>) }
-                val sortedReviews = reviews.sortedByDescending { review -> review.createdAt }
-                arrayAdapter.replace(sortedReviews)
-                arrayAdapter.notifyDataSetChanged()
-            } else {
-                val errorMessage = it.exception?.message
-                Toast.makeText(this, "Failed to fetch reviews. $errorMessage", Toast.LENGTH_SHORT)
+
+    private fun fetchReviews(restaurantName: String, placeID: String) {
+        Toast.makeText(this, "${textViewName.text}", Toast.LENGTH_SHORT).show()
+        db.collection("reviews").whereEqualTo("restaurantName", restaurantName).get()
+            .addOnCompleteListener(OnCompleteListener {
+                if (it.isSuccessful) {
+                    val reviews =
+                        it.result.documents.map { doc -> Review(doc.data as Map<String, Any>) }
+                    val sortedReviews = reviews.sortedByDescending { review -> review.createdAt }
+                    arrayAdapter.replace(sortedReviews)
+                    arrayAdapter.notifyDataSetChanged()
+                } else {
+                    val errorMessage = it.exception?.message
+                    Toast.makeText(
+                        this,
+                        "Failed to fetch reviews. $errorMessage",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            })
+
+        val call = googlePlacesAPIService.getPlaceDetails(placeID,
+            com.example.locadine.BuildConfig.MAPS_API_KEY
+        )
+        call.enqueue(object : Callback<GetPlaceDetailsResponse> {
+            override fun onResponse(
+                call: Call<GetPlaceDetailsResponse>,
+                response: Response<GetPlaceDetailsResponse>
+            ) {
+                if (response.isSuccessful) {
+                    val googleReviews = response.body()?.result?.reviews
+                    googleReviews?.let {
+                        arrayListGoogle.clear()
+                        arrayListGoogle.addAll(it)
+                        arrayAdapterGoogle.notifyDataSetChanged()
+                    }
+
+                    // Debugging: Print the first GoogleReview to check the data
+                    Log.d("GoogleReview", "First GoogleReview: ${googleReviews?.firstOrNull()}")
+                } else {
+                    // Handle error
+                    Toast.makeText(
+                        this@RestaurantDetailsActivity,
+                        "Error fetching restaurant details",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            override fun onFailure(call: Call<GetPlaceDetailsResponse>, t: Throwable) {
+                // Handle the failure case, such as a network error
+                Toast.makeText(this@RestaurantDetailsActivity, "Network error", Toast.LENGTH_SHORT)
                     .show()
             }
-        }
+        })
+
+                fun onFailure(call: Call<GetPlaceDetailsResponse>, t: Throwable) {
+                    Toast.makeText(
+                        this@RestaurantDetailsActivity,
+                        "Network error while fetching Google reviews",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
     }
 
-    private fun getRestaurantSummary(restaurant: RestaurantInfo): String {
+
+
+        private fun getRestaurantSummary(restaurant: RestaurantInfo): String {
         var result = ""
 
-        result += "Name: ${restaurant.name}\n"
-        result += "Id: ${restaurant.place_id}\n"
-        result += "Open now? ${restaurant.opening_hours?.open_now}\n"
+        //result += "Summary : ${restaurant.types}\n}"
         result += "Price level: ${restaurant.price_level}\n"
-        result += "Business status: ${restaurant.business_status}\n"
-        result += "Average rating: ${restaurant.rating}\n"
-        result += "Number of ratings: ${restaurant.user_ratings_total}\n"
-        //result += "Latitude: ${restaurant.geometry.location.lat}, longitude: ${restaurant.geometry.location.lng}\n\n"
-        //result += "One review: Author='${restaurant.reviews?.get(1)?.author_name}' Content='${restaurant.reviews?.get(0)?.text}'\n\n"
+        //result += "Phone number: ${restaurant.formatted_phone_number}\n"
+        //result += "Website : ${restaurant.website}\n"
+        //result += "Name: ${restaurant.name}\n"
+        //result += "Id: ${restaurant.place_id}\n"
+        result += "Open now : ${restaurant.opening_hours?.open_now}\n"
+        //result += "Price level: ${restaurant.price_level}\n"
+        //result += "Business status: ${restaurant.business_status}\n"
+        //result += "Average rating: ${restaurant.rating}\n"
+        //result += "Number of ratings: ${restaurant.user_ratings_total}\n"
+        //result += "Address: ${restaurant.vicinity}\n"
 
         return result
     }
@@ -287,7 +382,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         val favCollection = db.collection("users").document(fbAuth.uid!!).collection("favourites")
         val query = favCollection.whereEqualTo("restaurantID", restaurantID)
         query.get().addOnCompleteListener(this) {
-            
+
             // set unfavourite only if the result is successful and the restaurant exist
             if (it.isSuccessful && !it.result.documents.isEmpty()) {
 
@@ -302,3 +397,8 @@ class RestaurantDetailsActivity : AppCompatActivity() {
     }
 
 }
+
+
+
+
+

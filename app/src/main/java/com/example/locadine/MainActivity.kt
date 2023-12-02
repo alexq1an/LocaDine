@@ -15,6 +15,7 @@ import com.example.locadine.services.NotificationService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.messaging.FirebaseMessaging
 
+
 class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
     private lateinit var logoutButton: Button
     private lateinit var userInfo: TextView
@@ -71,7 +72,7 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
         }
 
         goToReviewsButton.setOnClickListener {
-            //startActivity(Intent(this, ReviewsActivity::class.java))
+            startActivity(Intent(this, ReviewsActivity::class.java))
         }
 
         goToChatbotButton.setOnClickListener {
