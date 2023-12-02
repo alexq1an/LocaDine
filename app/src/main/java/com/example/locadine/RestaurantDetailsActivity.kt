@@ -1,7 +1,6 @@
 package com.example.locadine
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.AdapterView
@@ -13,6 +12,7 @@ import android.widget.RatingBar
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -25,6 +25,7 @@ import com.example.locadine.pojos.GoogleReview
 import com.example.locadine.pojos.RestaurantInfo
 import com.example.locadine.pojos.Review
 import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -48,6 +49,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
     private lateinit var textViewWebsite: TextView
     private lateinit var buttonSubmitReview: Button
     private lateinit var favouriteButton : Button
+    private lateinit var navigateButton: Button
     private lateinit var restaurantsSummary: TextView
     private lateinit var imageView1: ImageView
     private lateinit var imageView2: ImageView
@@ -57,6 +59,8 @@ class RestaurantDetailsActivity : AppCompatActivity() {
     private val restaurant_name = "Restaurant Name"
     private lateinit var placeId: String
 
+    private lateinit var restaurantID: String
+    private lateinit var restaurant: RestaurantInfo
     // Reviews
     private lateinit var arrayList: ArrayList<Review>
     private lateinit var arrayAdapter: ReviewListAdapter
@@ -67,7 +71,9 @@ class RestaurantDetailsActivity : AppCompatActivity() {
 
 
     private lateinit var db: FirebaseFirestore
+    private lateinit var fbAuth: FirebaseAuth
     private lateinit var googlePlacesAPIService: GooglePlacesAPIService
+    private var favouriteFlag = false
 
     private val coroutineScope = MainScope()
 
@@ -78,6 +84,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_restaurant_details)
 
         db = FirebaseFirestore.getInstance()
+        fbAuth = FirebaseAuth.getInstance()
 
         textViewName = findViewById(R.id.textViewRestaurantName)
         textViewAddress = findViewById(R.id.address_id)
@@ -87,6 +94,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         restaurantsSummary = findViewById(R.id.textViewSummary)
         favouriteButton = findViewById(R.id.favourite_button)
         ratingBar = findViewById(R.id.ratingBar)
+        navigateButton = findViewById(R.id.navigate_button)
         ratingBar.stepSize = 0.5f
         ratingBar.rating = 4f
 
@@ -119,13 +127,16 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         googlePlacesAPIService = retrofit.create(GooglePlacesAPIService::class.java)
 
         // Extract PlaceID from Intent
-        placeId = intent.getStringExtra("PLACE_ID").toString()
-        placeId?.let {
-            sendRequest(it)
-        }
 
+
+        restaurantID = intent.getStringExtra("PLACE_ID")!!
+        sendRequest(restaurantID)
+
+
+        // this is declared twice?
         db = FirebaseFirestore.getInstance()
 
+        checkIfFavourite()
         //fetchReviews()
 
 
@@ -156,14 +167,41 @@ class RestaurantDetailsActivity : AppCompatActivity() {
             }
 
         }
+
+        navigateButton.setOnClickListener {
+            val mapIntent = Intent(this, MapsActivity::class.java)
+            mapIntent.putExtra("Navigate", true)
+            mapIntent.putExtra("Lat", restaurant.geometry.location.lat)
+            mapIntent.putExtra("Lng", restaurant.geometry.location.lng)
+
+            startActivity(mapIntent)
+        }
+
+        favouriteButton.setOnClickListener {
+            if (fbAuth != null ){
+                if (!favouriteFlag) {
+                    addFavourite()
+                    Toast.makeText(this, "Saved to favourites!", Toast.LENGTH_SHORT).show()
+                }
+                else if(favouriteFlag) {
+                    removeFavourite()
+                    Toast.makeText(this, "Removed from favourites!", Toast.LENGTH_SHORT).show()
+                }
+
+            }
+            else {
+                Toast.makeText(this, "You are not logged in!", Toast.LENGTH_SHORT).show()
+            }
+
+        }
     }
 
     private fun sendRequest(placeId: String) {
-        val call = googlePlacesAPIService.getPlaceDetails(placeId, com.example.locadine.BuildConfig.MAPS_API_KEY)
+        val call = googlePlacesAPIService.getPlaceDetails(placeId, BuildConfig.MAPS_API_KEY)
         call.enqueue(object : Callback<GetPlaceDetailsResponse> {
             override fun onResponse(call: Call<GetPlaceDetailsResponse>, response: Response<GetPlaceDetailsResponse>) {
                 if (response.isSuccessful) {
-                    val restaurant = response.body()!!.result
+                    restaurant = response.body()!!.result
                     restaurantsSummary.text = getRestaurantSummary(restaurant)  // separate summary
                     textViewName.text = restaurant.name
                     textViewAddress.text = restaurant.vicinity
@@ -310,6 +348,60 @@ class RestaurantDetailsActivity : AppCompatActivity() {
 
         return result
     }
+
+    private fun addFavourite() {
+        db.collection("users").document(fbAuth.uid!!).collection("favourites").document().set(
+            hashMapOf(
+                "restaurantID" to restaurantID,
+                "restaurantName" to restaurant.name,
+                "restaurantPicture" to Util.getPhotoUrl(restaurant.photos!![0].photo_reference),
+            )
+        )
+        favouriteButton.text = "Unfavourite"
+        favouriteFlag = true
+    }
+
+    private fun removeFavourite() {
+        val favCollection = db.collection("users").document(fbAuth.uid!!).collection("favourites")
+        val query = favCollection.whereEqualTo("restaurantID", restaurantID)
+        query.get().addOnCompleteListener(this) { res ->
+            if (res.isSuccessful) {
+                val ref = db.collection("users").document(fbAuth.uid!!).collection("favourites")
+                    .document(res.result.documents[0].id)
+                ref.delete().addOnCompleteListener(this) {
+                    if (it.isSuccessful) {
+                        Toast.makeText(this, "Removed from favourites!", Toast.LENGTH_SHORT).show()
+                        favouriteButton.text = "Favourite"
+                        favouriteFlag = false
+                    } else {
+                        println("Document not found")
+                    }
+                }
+            } else {
+                println("Document not found")
+            }
+        }
+    }
+
+    private fun checkIfFavourite() {
+        //checks if user already has this restaurant in favourites
+        val favCollection = db.collection("users").document(fbAuth.uid!!).collection("favourites")
+        val query = favCollection.whereEqualTo("restaurantID", restaurantID)
+        query.get().addOnCompleteListener(this) {
+
+            // set unfavourite only if the result is successful and the restaurant exist
+            if (it.isSuccessful && !it.result.documents.isEmpty()) {
+
+                favouriteButton.text = "Unfavourite"
+                favouriteFlag = true
+            } else {
+                favouriteButton.text = "Favourite"
+                favouriteFlag = false
+            }
+        }
+
+    }
+
 }
 
 
