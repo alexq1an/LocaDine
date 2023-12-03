@@ -124,13 +124,11 @@
             android:textColor="#238AC1" />
 
 
-
-
         <ListView
             android:id="@+id/review_list_firebase"
             android:layout_width="match_parent"
             android:layout_height="300dp"
-            android:dividerHeight="10dp" />
+            android:dividerHeight="2dp" />
 
 
         <TextView

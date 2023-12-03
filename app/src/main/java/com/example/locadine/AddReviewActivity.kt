@@ -72,7 +72,8 @@ class AddReviewActivity : AppCompatActivity() {
                 db.collection("reviews").add(reviewData).addOnCompleteListener(this, OnCompleteListener {
                     if (it.isSuccessful) {
                         Toast.makeText(this, "Review added", Toast.LENGTH_SHORT).show()
-                        val intent = Intent(this, MapsActivity::class.java)
+                        val intent = Intent(this, RestaurantDetailsActivity::class.java)
+                        intent.putExtra("PLACE_ID", placeID)
                         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
                         startActivity(intent)
                     } else {
