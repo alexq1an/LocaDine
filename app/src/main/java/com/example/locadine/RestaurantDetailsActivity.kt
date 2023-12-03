@@ -35,13 +35,6 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-
-// need rating bar that shows stars for price and rating
-// organize summary to be more readable
-// make reviews scrollable
-// make hours accurate to real store hours
-
-
 class RestaurantDetailsActivity : AppCompatActivity() {
     private lateinit var textViewName: TextView
     private lateinit var textViewAddress: TextView
@@ -374,10 +367,10 @@ class RestaurantDetailsActivity : AppCompatActivity() {
             // set unfavourite only if the result is successful and the restaurant exist
             if (it.isSuccessful && !it.result.documents.isEmpty()) {
 
-                favouriteButton.text = "Unfavourite"
+                favouriteButton.text = "Remove as favourite"
                 favouriteFlag = true
             } else {
-                favouriteButton.text = "Favourite"
+                favouriteButton.text = "Save as favourite"
                 favouriteFlag = false
             }
         }

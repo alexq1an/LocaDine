@@ -29,7 +29,6 @@ class ReviewListAdapter(private val context: Context, private var reviewList: Li
         val rating = view.findViewById<RatingBar>(R.id.review_rating)
         val reviewerEmail = view.findViewById<TextView>(R.id.reviewer_email)
         val createdAt = view.findViewById<TextView>(R.id.review_createdAt)
-        val placeID = view.findViewById<TextView>(R.id.review_placeID)
 
         val review = reviewList[position]
         restaurantName.text = "Restaurant name: ${review.restaurantName}"
@@ -37,7 +36,6 @@ class ReviewListAdapter(private val context: Context, private var reviewList: Li
         rating.rating = review.rating.toFloat()
         reviewerEmail.text = "Reviewer: ${review.reviewerEmail}"
         createdAt.text = "Created at: ${review.createdAt}"
-        placeID.text = "Place ID: ${review.placeID}"
 
         return view
     }

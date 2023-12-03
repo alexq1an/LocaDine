@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.RatingBar
+import android.widget.TextView
 import android.widget.Toast
 import com.example.locadine.pojos.Review
 import com.google.android.gms.tasks.OnCompleteListener
@@ -16,7 +17,7 @@ import com.google.firebase.firestore.SetOptions
 import java.util.Date
 
 class AddReviewActivity : AppCompatActivity() {
-    private lateinit var restaurantName: EditText
+    private lateinit var restaurantName: TextView
     private lateinit var review: EditText
     private lateinit var ratingBar: RatingBar
     private lateinit var submitReviewButton: Button
@@ -47,9 +48,7 @@ class AddReviewActivity : AppCompatActivity() {
 
         placeID = intent.getStringExtra("PLACE_id").toString()
 
-        val restaurantName = findViewById<EditText>(R.id.restaurant_name)
-        restaurantName.setText(intent.getStringExtra("PLACE_name").toString())
-        restaurantName.isEnabled = false
+        restaurantName.text = intent.getStringExtra("PLACE_name").toString()
     }
 
     private fun submitReview() {
