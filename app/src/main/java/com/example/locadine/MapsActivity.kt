@@ -60,8 +60,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
     private var currLocation: LatLng? = null
     private var currentMarker: Marker? = null
 
-    private lateinit var googlePlacesAPIService: GooglePlacesAPIService
-
     private lateinit var chatbotButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -116,8 +114,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
 
     private fun fetchRestaurants() {
-
-    // Fetch the user's location
+        // Fetch the user's location
         // Now that we have the user's location, proceed to fetch nearby restaurants
         val radiusInMeters = FilterSetting.distance
         val curLocation = "${currLocation?.latitude},${currLocation?.longitude}"
@@ -134,6 +131,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
                 if (response.isSuccessful) {
                     val restaurants = response.body()!!.results
 
+                    if (restaurants.isEmpty()) {
+                        Toast.makeText(
+                            applicationContext,
+                            "There is no desired restaurant with current filter setting in your region",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        return
+                    }
+
                     // Apply filters
                     val filterRatingLayer1 = filterByRating(
                         restaurants,
@@ -142,15 +148,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
                     val filterPriceLayer2 =
                         filterByPrice(filterRatingLayer1, FilterSetting.price) // next layer
 
-
+                    var numImageLoaded = 0
                     // Iterate through the list of restaurants and add markers
-                    filterPriceLayer2?.forEach { filterPriceLayer2 -> // for each restaurant after filter
-                        val restaurantLocation = filterPriceLayer2.geometry.location
+                    filterPriceLayer2?.forEach { currentRestaurant -> // for each restaurant after filter
+                        val restaurantLocation = currentRestaurant.geometry.location
                         val restaurantLatLng =
                             LatLng(restaurantLocation.lat, restaurantLocation.lng)
 
                         val photoUrl =
-                            Util.getPhotoUrl(filterPriceLayer2.photos!![0].photo_reference)
+                            Util.getPhotoUrl(currentRestaurant.photos!![0].photo_reference)
                         Glide.with(this@MapsActivity).asBitmap().load(photoUrl).override(200, 200)
                             .into(object : CustomTarget<Bitmap>() {
                                 override fun onResourceReady(
@@ -161,11 +167,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
                                     val marker = mMap.addMarker(
                                         MarkerOptions()
                                             .position(restaurantLatLng)
-                                            .title("${filterPriceLayer2.rating}  ${filterPriceLayer2.name}")
+                                            .title("${currentRestaurant.rating}  ${currentRestaurant.name}")
                                             .icon(resizedIcon)
                                     )
                                     if (marker != null) { // Mandatory not null check to add marker to the list
-                                        markerMap[marker] = filterPriceLayer2.place_id
+                                        markerMap[marker] = currentRestaurant.place_id
+                                    }
+                                    numImageLoaded++
+                                    if (numImageLoaded == filterPriceLayer2!!.size) {
+                                        moveCameraToFitMarkers(markerMap.keys.toList())
                                     }
                                 }
 
@@ -176,15 +186,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
                     mMap.setOnMarkerClickListener(this@MapsActivity)
                     FilterSetting.restaurants = filterPriceLayer2 // pass all the data fetched into object for list data
-                    try {
-                        moveCameraToFitMarkers(markerMap.keys.toList())
-                    } catch (e: Exception) {
-                        Toast.makeText(
-                            applicationContext,
-                            "There is no desired restaurant with current filter setting in your region",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
                 }
             }
 
