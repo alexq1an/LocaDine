@@ -73,12 +73,11 @@
             android:layout_marginTop="8dp"
             android:text="Phone Number: 123-456-7890"/>
 
-        <Spinner
-            android:id="@+id/hoursSpinner"
+        <TextView
+            android:id="@+id/opening_hours_today"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:entries="@array/days_array"/>
+            android:text="TextView" />
 
         <TextView
             android:id="@+id/textViewWebsite"

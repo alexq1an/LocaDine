@@ -45,7 +45,24 @@ data class Viewport(
 )
 
 data class OpeningHours(
-    val open_now: Boolean
+    val open_now: Boolean,
+    val periods: List<Period>,
+    val weekday_text: List<String>
+)
+
+data class Period(
+    val close: Close,
+    val open: Open
+)
+
+data class Close(
+    val day: Int,
+    val time: String
+)
+
+data class Open(
+    val day: Int,
+    val time: String
 )
 
 data class Photo(

@@ -116,4 +116,14 @@ object Util {
         listView.layoutParams = params
         listView.requestLayout()
     }
+
+    fun getPrice(level: Int?): String {
+        return when (level) {
+            1 -> "$"
+            2 -> "$$"
+            3 -> "$$$"
+            4 -> "$$$$"
+            else -> "N/A"
+        }
+    }
 }

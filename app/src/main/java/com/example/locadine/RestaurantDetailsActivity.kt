@@ -34,6 +34,7 @@ import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.util.Calendar
 
 class RestaurantDetailsActivity : AppCompatActivity() {
     private lateinit var textViewName: TextView
@@ -47,7 +48,6 @@ class RestaurantDetailsActivity : AppCompatActivity() {
     private lateinit var imageView1: ImageView
     private lateinit var imageView2: ImageView
     private lateinit var imageView3: ImageView
-    private lateinit var hoursSpinner: Spinner
     private lateinit var ratingBar: RatingBar
     private val restaurant_name = "Restaurant Name"
     private lateinit var placeId: String
@@ -82,7 +82,6 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         textViewAddress = findViewById(R.id.address_id)
         textViewPhoneNumber = findViewById(R.id.textViewPhoneNumber)
         textViewWebsite = findViewById(R.id.textViewWebsite)
-        hoursSpinner = findViewById(R.id.hoursSpinner)
         restaurantsSummary = findViewById(R.id.textViewSummary)
         favouriteButton = findViewById(R.id.favourite_button)
         ratingBar = findViewById(R.id.ratingBar)
@@ -119,32 +118,8 @@ class RestaurantDetailsActivity : AppCompatActivity() {
 
         checkIfFavourite()
 
-        lifecycleScope.launch(Dispatchers.Main) {
-            ArrayAdapter.createFromResource(
-                applicationContext, R.array.days_array,
-                android.R.layout.simple_spinner_item
-            ).also { adapter ->
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                hoursSpinner.adapter = adapter
-            }
-
-
-            hoursSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(
-                    parent: AdapterView<*>?,
-                    view: android.view.View?,
-                    position: Int,
-                    id: Long
-                ) {   }
-
-                override fun onNothingSelected(parent: AdapterView<*>?) {
-                }
-            }
-
-            buttonSubmitReview.setOnClickListener {
-                openAddReviewActivity()
-            }
-
+        buttonSubmitReview.setOnClickListener {
+            openAddReviewActivity()
         }
 
         navigateButton.setOnClickListener {
@@ -188,6 +163,16 @@ class RestaurantDetailsActivity : AppCompatActivity() {
                     restaurant_name == restaurant.name
                     textViewPhoneNumber.text = restaurant.formatted_phone_number
                     textViewWebsite.text = "Website : ${restaurant.website}"
+
+                    // Get today's day of the week
+                    val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+                    val daysArray = resources.getStringArray(R.array.days_array) // Ensure this array has days in correct order starting from Sunday
+                    val todayString = daysArray[today - 1]
+
+                    // Find today's opening hours
+                    val openingHoursToday = restaurant.opening_hours?.weekday_text?.find { it.startsWith(todayString) }
+                        ?: "Not available"
+                    findViewById<TextView>(R.id.opening_hours_today).text = openingHoursToday
 
 
                     val photoUrl1 = Util.getPhotoUrl(restaurant.photos!![0].photo_reference)
@@ -309,7 +294,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         var result = ""
 
         //result += "Summary : ${restaurant.types}\n}"
-        result += "Price level: ${restaurant.price_level}\n"
+        result += "Price: ${Util.getPrice(restaurant.price_level)}\n"
         //result += "Phone number: ${restaurant.formatted_phone_number}\n"
         //result += "Website : ${restaurant.website}\n"
         //result += "Name: ${restaurant.name}\n"
@@ -317,8 +302,8 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         result += "Open now : ${restaurant.opening_hours?.open_now}\n"
         //result += "Price level: ${restaurant.price_level}\n"
         //result += "Business status: ${restaurant.business_status}\n"
-        //result += "Average rating: ${restaurant.rating}\n"
-        //result += "Number of ratings: ${restaurant.user_ratings_total}\n"
+        result += "Average rating: ${restaurant.rating}\n"
+        result += "Number of ratings: ${restaurant.user_ratings_total}\n"
         //result += "Address: ${restaurant.vicinity}\n"
 
         return result

@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
 
         val isLoggedIn = auth.currentUser != null
         if (isLoggedIn) {
-            userInfo.text = "Welcome to Locadine, ${auth.currentUser!!.email}"
+            userInfo.text = "Welcome to Locadine\n${auth.currentUser!!.email}"
         } else {
             startActivity(Intent(this, LoginActivity::class.java))
         }
@@ -58,20 +58,6 @@ class MainActivity : AppCompatActivity(), MapViewModel.LocationCallBack {
             Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, LoginActivity::class.java))
         }
-
-//        goToChatbotButton.setOnClickListener {
-//            startActivity(Intent(this, ChatbotActivity::class.java))
-//        }
-//
-//        notificationButton.setOnClickListener {
-//            NotificationService.displayNotification(this, "Test", "This is a test notification")
-//        }
-//
-//        restaurantPageButton.setOnClickListener {
-//            val intent = Intent(this, RestaurantDetailsActivity::class.java)
-//            intent.putExtra("PLACE_ID", "ChIJBRXCcsB5hlQRewtNTQuhEoI")
-//            startActivity(intent)
-//        }
 
         favouriteButton.setOnClickListener {
             startActivity(Intent(this, MyFavourites::class.java))

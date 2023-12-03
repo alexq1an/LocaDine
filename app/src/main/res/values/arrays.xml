@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="days_array">
-        <item>Monday : 10AM - 8PM</item>
-        <item>Tuesday : 10AM - 8PM</item>
-        <item>Wednesday : 10AM - 8PM</item>
-        <item>Thursday : 10AM - 8PM</item>
-        <item>Friday : 10AM - 8PM</item>
-        <item>Saturday : 10AM - 8PM</item>
-        <item>Sunday : Closed</item>
+        <item>Sunday</item>
+        <item>Monday</item>
+        <item>Tuesday</item>
+        <item>Wednesday</item>
+        <item>Thursday</item>
+        <item>Friday</item>
+        <item>Saturday</item>
     </string-array>
 
 

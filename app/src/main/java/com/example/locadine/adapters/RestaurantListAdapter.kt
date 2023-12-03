@@ -43,7 +43,7 @@ class RestaurantListAdapter(private val context: Context, private var restaurant
 
         adapterName.text = restaurantInfo[position].name
         adapterRating.text = "Rating: ${restaurantInfo[position].rating.toString()}"
-        adapterPrice.text = "Price: ${getPrice(restaurantInfo[position].price_level)}"
+        adapterPrice.text = "Price: ${Util.getPrice(restaurantInfo[position].price_level)}"
         if (restaurantInfo[position].opening_hours?.open_now == true) {
             adapterOpen.text = "Open now"
         } else {
@@ -58,15 +58,4 @@ class RestaurantListAdapter(private val context: Context, private var restaurant
 
         return view
     }
-
-    private fun getPrice(level: Int?): String {
-        return when (level) {
-            1 -> "$"
-            2 -> "$$"
-            3 -> "$$$"
-            4 -> "$$$$"
-            else -> "N/A"
-        }
-    }
-
 }
