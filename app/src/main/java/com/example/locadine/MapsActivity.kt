@@ -19,6 +19,7 @@ import com.example.locadine.ViewModels.MapViewModel
 import com.example.locadine.api.GooglePlacesAPIService
 import com.example.locadine.databinding.ActivityMapsBinding
 import com.example.locadine.interfaces.FilterDialogListener
+import com.example.locadine.pojos.CustomTag
 import com.example.locadine.pojos.NearbySearchResponse
 import com.example.locadine.pojos.RestaurantInfo
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -29,6 +30,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLngBounds
@@ -111,7 +113,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         }
     }
 
+    private fun resizeBitmapForZoom(bitmap: Bitmap, zoomLevel: Float): Bitmap {
+        val scaleFactor = calculateScaleFactor(zoomLevel) // Implement this method to decide the scaling factor based on zoom level
+        val newWidth = (bitmap.width * scaleFactor).toInt()
+        val newHeight = (bitmap.height * scaleFactor).toInt()
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, false)
+    }
 
+    private fun calculateScaleFactor(zoomLevel: Float): Float {
+        val baseScale = 0.5f
+        val scaleIncrement = 0.1f
+        return baseScale + (zoomLevel * scaleIncrement)
+    }
 
     private fun fetchRestaurants() {
         // Fetch the user's location
@@ -157,7 +170,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
                         val photoUrl =
                             Util.getPhotoUrl(currentRestaurant.photos!![0].photo_reference)
-                        Glide.with(this@MapsActivity).asBitmap().load(photoUrl).override(200, 200)
+                        Glide.with(this@MapsActivity).asBitmap().load(photoUrl)
                             .into(object : CustomTarget<Bitmap>() {
                                 override fun onResourceReady(
                                     resource: Bitmap,
@@ -172,6 +185,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
                                     )
                                     if (marker != null) { // Mandatory not null check to add marker to the list
                                         markerMap[marker] = currentRestaurant.place_id
+                                        marker.tag = CustomTag(null, resource)
                                     }
                                     numImageLoaded++
                                     if (numImageLoaded == filterPriceLayer2!!.size) {
@@ -223,17 +237,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         mMap.moveCamera(cu)
     }
 
-
-
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-        mMap.setOnInfoWindowClickListener {
-            val placeId = it.tag as? String
-            if (placeId != null) {
-                val intent = Intent(this, RestaurantDetailsActivity::class.java)
-                intent.putExtra("PLACE_ID", placeId)
-                startActivity(intent)
-            }
+
+        mMap.setOnCameraIdleListener {
+            resizeIcons()
         }
 
         if (mMap.mapType == null) {
@@ -246,6 +254,33 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         getCurrentLocation()
     }
 
+    private fun resizeIcons() {
+        val currentZoomLevel = mMap.cameraPosition.zoom
+        for (marker in markerMap.keys) {
+            val tag = (marker.tag as? CustomTag) ?: continue
+            if (tag.originalIcon != null) {
+                val newSize = calculateIconSize(currentZoomLevel)
+                val resizedIcon = resizeIcon(tag.originalIcon!!, newSize)
+                marker.setIcon(resizedIcon)
+            }
+        }
+    }
+
+    val BASE_ICON_SIZE = 50 // in pixels
+    val BASE_ZOOM_LEVEL = 10f
+
+    // Function to calculate the icon size based on the current zoom level
+    private fun calculateIconSize(currentZoomLevel: Float): Int {
+        val zoomDifference = currentZoomLevel - BASE_ZOOM_LEVEL
+        // Assuming the icon size doubles with each zoom level increase
+        return (BASE_ICON_SIZE * Math.pow(2.0, zoomDifference.toDouble())).toInt()
+    }
+
+    // Function to resize the icon
+    private fun resizeIcon(originalIcon: Bitmap, size: Int): BitmapDescriptor {
+        val resizedBitmap = Bitmap.createScaledBitmap(originalIcon, size, size, false)
+        return BitmapDescriptorFactory.fromBitmap(resizedBitmap)
+    }
 
     //gets the current location of device Once
     private fun getCurrentLocation() {
