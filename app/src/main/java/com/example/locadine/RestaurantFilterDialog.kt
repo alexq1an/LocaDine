@@ -139,4 +139,6 @@ class RestaurantFilterDialog(private val listener: FilterDialogListener) : Dialo
         }
         return filterArray.indexOf(stringValue)
     }
+
+
 }

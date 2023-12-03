@@ -1,44 +1,49 @@
 package com.example.locadine
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.location.Location
-import androidx.appcompat.app.AppCompatActivity
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.widget.Button
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.example.locadine.ViewModels.MapViewModel
-import com.example.locadine.ViewModels.RestaurantInfoViewModel
 import com.example.locadine.api.GooglePlacesAPIService
-
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
 import com.example.locadine.databinding.ActivityMapsBinding
 import com.example.locadine.interfaces.FilterDialogListener
+import com.example.locadine.pojos.CustomTag
 import com.example.locadine.pojos.NearbySearchResponse
 import com.example.locadine.pojos.RestaurantInfo
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.LocationCallBack, FilterDialogListener {
+
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.LocationCallBack, GoogleMap.OnMarkerClickListener, FilterDialogListener {
 
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityMapsBinding
@@ -47,13 +52,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
     private lateinit var polylineOptions: PolylineOptions
     private lateinit var mapSwitch: Button
     private lateinit var restaurantList: Button
+    private lateinit var findButton: Button
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var mapViewModel: MapViewModel
+    private lateinit var markerMap: HashMap<Marker, String>
+    private lateinit var googlePlacesAPIService: GooglePlacesAPIService
 
     private var polyLine: Polyline? = null
     private var currLocation: LatLng? = null
-
-    private lateinit var googlePlacesAPIService: GooglePlacesAPIService
+    private var currentMarker: Marker? = null
 
     private lateinit var chatbotButton: Button
 
@@ -76,11 +83,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         mapViewModel = MapViewModel(fusedLocationProviderClient)
 
+        markerMap = HashMap()
+
         // Activate Google Place API
         val retrofit = Util.getGooglePlacesRetrofitInstance()
         googlePlacesAPIService = retrofit.create(GooglePlacesAPIService::class.java)
 
-        fetchRestaurants() // fetch restaurant when user enters the app
 
         mapSwitch = binding.mapSwitch
         mapSwitch.setOnClickListener() {
@@ -89,9 +97,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
             } else {
                 mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
             }
-
         }
-
         restaurantList = binding.listButton
         restaurantList.setOnClickListener() {
             val restaurantListDialog = RestaurantListDialog()
@@ -105,89 +111,102 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
             val filterDialog = RestaurantFilterDialog(this)
             filterDialog.show(supportFragmentManager, "RestaurantFilter")
         }
-
-        fetchRestaurants()
     }
 
-    @SuppressLint("MissingPermission")
-    fun requestLocation(callback: (latitude: Double, longitude: Double) -> Unit) {
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+    private fun resizeBitmapForZoom(bitmap: Bitmap, zoomLevel: Float): Bitmap {
+        val scaleFactor = calculateScaleFactor(zoomLevel) // Implement this method to decide the scaling factor based on zoom level
+        val newWidth = (bitmap.width * scaleFactor).toInt()
+        val newHeight = (bitmap.height * scaleFactor).toInt()
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, false)
+    }
 
-        fusedLocationClient.lastLocation
-            .addOnSuccessListener { location: Location? ->
-                // Got last known location
-                if (location != null) {
-                    val latitude = location.latitude
-                    val longitude = location.longitude
-                    // Call the callback with the location
-                    callback(latitude, longitude)
-                }
-            }
+    private fun calculateScaleFactor(zoomLevel: Float): Float {
+        val baseScale = 0.5f
+        val scaleIncrement = 0.1f
+        return baseScale + (zoomLevel * scaleIncrement)
     }
 
     private fun fetchRestaurants() {
-
         // Fetch the user's location
-        requestLocation { latitude, longitude ->
+        // Now that we have the user's location, proceed to fetch nearby restaurants
+        val radiusInMeters = FilterSetting.distance
+        val curLocation = "${currLocation?.latitude},${currLocation?.longitude}"
 
-            // Now that we have the user's location, proceed to fetch nearby restaurants
-            val radiusInMeters = FilterSetting.distance
-            val curLocation = "$latitude,$longitude"
+        // Clear existing markers
+        mMap.clear()
+        // Fetch nearby restaurants
+        val call = googlePlacesAPIService.findNearbyRestaurants(curLocation, radiusInMeters, BuildConfig.MAPS_API_KEY)
+        call.enqueue(object : Callback<NearbySearchResponse> {
+            override fun onResponse(
+                call: Call<NearbySearchResponse>,
+                response: Response<NearbySearchResponse>
+            ) {
+                if (response.isSuccessful) {
+                    val restaurants = response.body()!!.results
 
-            // Clear existing markers
-            mMap.clear()
-
-            // Fetch nearby restaurants
-            val call = googlePlacesAPIService.findNearbyRestaurants(curLocation, radiusInMeters, BuildConfig.MAPS_API_KEY)
-            call.enqueue(object : Callback<NearbySearchResponse> {
-                override fun onResponse(
-                    call: Call<NearbySearchResponse>,
-                    response: Response<NearbySearchResponse>
-                ) {
-                    if (response.isSuccessful) {
-                        val restaurants = response.body()!!.results
-                        RestaurantInfoViewModel.restaurantInfoList = restaurants
-
-                        // Apply filters
-                        val filterRatingLayer1 = filterByRating(restaurants, FilterSetting.rating) // apply filter layer by layer
-                        val filterPriceLayer2 = filterByPrice(filterRatingLayer1, FilterSetting.price) // next layer
-
-                        val markerList = mutableListOf<Marker>() // create a list for marker to calculate camera bound
-                        // Iterate through the list of restaurants and add markers
-                        filterPriceLayer2?.forEach { filterPriceLayer2 -> // for each restaurant after filter
-                            val restaurantLocation = filterPriceLayer2.geometry.location
-                            val restaurantLatLng = LatLng(restaurantLocation.lat, restaurantLocation.lng)
-
-                            val marker = mMap.addMarker(
-                                MarkerOptions()
-                                    .position(restaurantLatLng)
-                                    .title("${filterPriceLayer2.rating}  ${filterPriceLayer2.name}")
-
-                            )
-                            if (marker != null) { // Mandatory not null check to add marker to the list
-                                marker.tag = filterPriceLayer2.place_id
-                                markerList.add(marker)
-                            }
-                        }
-
-                        FilterSetting.restaurants = filterPriceLayer2 // pass all the data fetched into object for list data
-
-                        try{
-                            moveCameraToFitMarkers(markerList)
-                        } catch(e:Exception){
-                            Toast.makeText(applicationContext, "There is no desired restaurant with current filter setting in your region",Toast.LENGTH_LONG).show()
-                        }
-
-                    } else {
-                        Toast.makeText(applicationContext, "Problem with Showing Markers", Toast.LENGTH_SHORT).show()
+                    if (restaurants.isEmpty()) {
+                        Toast.makeText(
+                            applicationContext,
+                            "There is no desired restaurant with current filter setting in your region",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        return
                     }
-                }
 
-                override fun onFailure(call: Call<NearbySearchResponse>, t: Throwable) {
-                    // Handle the failure case, such as a network error
+                    // Apply filters
+                    val filterRatingLayer1 = filterByRating(
+                        restaurants,
+                        FilterSetting.rating
+                    ) // apply filter layer by layer
+                    val filterPriceLayer2 =
+                        filterByPrice(filterRatingLayer1, FilterSetting.price) // next layer
+
+                    var numImageLoaded = 0
+                    // Iterate through the list of restaurants and add markers
+                    filterPriceLayer2?.forEach { currentRestaurant -> // for each restaurant after filter
+                        val restaurantLocation = currentRestaurant.geometry.location
+                        val restaurantLatLng =
+                            LatLng(restaurantLocation.lat, restaurantLocation.lng)
+
+                        val photoUrl =
+                            Util.getPhotoUrl(currentRestaurant.photos!![0].photo_reference)
+                        Glide.with(this@MapsActivity).asBitmap().load(photoUrl)
+                            .into(object : CustomTarget<Bitmap>() {
+                                override fun onResourceReady(
+                                    resource: Bitmap,
+                                    transition: Transition<in Bitmap>?
+                                ) {
+                                    val resizedIcon = Util.resizeIcon(resource, 150, 150)
+                                    val marker = mMap.addMarker(
+                                        MarkerOptions()
+                                            .position(restaurantLatLng)
+                                            .title("${currentRestaurant.rating}  ${currentRestaurant.name}")
+                                            .icon(resizedIcon)
+                                    )
+                                    if (marker != null) { // Mandatory not null check to add marker to the list
+                                        markerMap[marker] = currentRestaurant.place_id
+                                        marker.tag = CustomTag(null, resource)
+                                    }
+                                    numImageLoaded++
+                                    if (numImageLoaded == filterPriceLayer2!!.size) {
+                                        moveCameraToFitMarkers(markerMap.keys.toList())
+                                    }
+                                }
+
+                                override fun onLoadCleared(placeholder: Drawable?) {
+                                }
+                            })
+                    }
+
+                    mMap.setOnMarkerClickListener(this@MapsActivity)
+                    FilterSetting.restaurants = filterPriceLayer2 // pass all the data fetched into object for list data
                 }
-            })
-        }
+            }
+
+            override fun onFailure(call: Call<NearbySearchResponse>, t: Throwable) {
+                // Handle the failure case, such as a network error
+            }
+        })
     }
 
     private fun filterByRating(restaurants: List<RestaurantInfo>, minRating: Double): List<RestaurantInfo> {
@@ -218,17 +237,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         mMap.moveCamera(cu)
     }
 
-
-
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-        mMap.setOnInfoWindowClickListener {
-            val placeId = it.tag as? String
-            if (placeId != null) {
-                val intent = Intent(this, RestaurantDetailsActivity::class.java)
-                intent.putExtra("PLACE_ID", placeId)
-                startActivity(intent)
-            }
+
+        mMap.setOnCameraIdleListener {
+            resizeIcons()
         }
 
         if (mMap.mapType == null) {
@@ -241,6 +254,33 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         getCurrentLocation()
     }
 
+    private fun resizeIcons() {
+        val currentZoomLevel = mMap.cameraPosition.zoom
+        for (marker in markerMap.keys) {
+            val tag = (marker.tag as? CustomTag) ?: continue
+            if (tag.originalIcon != null) {
+                val newSize = calculateIconSize(currentZoomLevel)
+                val resizedIcon = resizeIcon(tag.originalIcon!!, newSize)
+                marker.setIcon(resizedIcon)
+            }
+        }
+    }
+
+    val BASE_ICON_SIZE = 50 // in pixels
+    val BASE_ZOOM_LEVEL = 10f
+
+    // Function to calculate the icon size based on the current zoom level
+    private fun calculateIconSize(currentZoomLevel: Float): Int {
+        val zoomDifference = currentZoomLevel - BASE_ZOOM_LEVEL
+        // Assuming the icon size doubles with each zoom level increase
+        return (BASE_ICON_SIZE * Math.pow(2.0, zoomDifference.toDouble())).toInt()
+    }
+
+    // Function to resize the icon
+    private fun resizeIcon(originalIcon: Bitmap, size: Int): BitmapDescriptor {
+        val resizedBitmap = Bitmap.createScaledBitmap(originalIcon, size, size, false)
+        return BitmapDescriptorFactory.fromBitmap(resizedBitmap)
+    }
 
     //gets the current location of device Once
     private fun getCurrentLocation() {
@@ -261,9 +301,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
     }
 
 
-    // initialize marker for each iteration
-    private var lastMarker: Marker? = null
-
     // This Tracks the device in intervals and marks the location on the map
     private fun locationUpdates() {
         if (ActivityCompat.checkSelfPermission(
@@ -280,12 +317,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         }
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000).build()
         mapViewModel.getLocationUpdates(locationRequest)
+        val icon: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.person_here)
+        val resizedIcon = Util.resizeIcon(icon, 200, 200)
         mapViewModel.locationLiveData.observe(this) { location ->
+            println("dbg: Update $location")
             val position = LatLng(location.latitude , location.longitude)
-            lastMarker?.remove()
-            markerOptions.position(position).title("You are here")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
-            lastMarker = mMap.addMarker(markerOptions)
+            currentMarker?.remove()
+            markerOptions.position(position).title("You are here").icon(resizedIcon).zIndex(100f)
+            currentMarker = mMap.addMarker(markerOptions)
+            val cameraUpdate = CameraUpdateFactory.newLatLngZoom(position, 17f)
+            mMap.animateCamera(cameraUpdate)
         }
     }
 
@@ -301,11 +342,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         val cameraUpdate = CameraUpdateFactory.newLatLngZoom(location, 17f)
         mMap.animateCamera(cameraUpdate)
         println("dbg: Current $location")
-        lastMarker?.remove()
-        markerOptions.position(location).title("You Are Here")
-            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
-        lastMarker = mMap.addMarker(markerOptions)
+        currentMarker?.remove()
+        val icon: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.person_here)
+        val resizedIcon = Util.resizeIcon(icon, 200, 200)
+        markerOptions.position(location).title("You Are Here").icon(resizedIcon).zIndex(100f)
+        currentMarker = mMap.addMarker(markerOptions)
         currLocation = location
+
+        fetchRestaurants()
 
         navigationCheck(location)
     }
@@ -334,8 +378,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         val route = ArrayList<LatLng>()
         var duration = ""
         var distance = ""
-
         mapViewModel.routeLiveData.observe(this) {
+
             it.routes[0].legs[0].steps.forEach { i ->
                 route.addAll(mapViewModel.decodePolyline(i.polyline.points))
             }
@@ -350,6 +394,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
             println("dbg: A Duration: $duration A Distance: $distance")
         }
+    }
+
+    override fun onMarkerClick(marker: Marker): Boolean {
+        //val position = marker.position
+        val place_id = markerMap[marker]
+        val intent = Intent(this, RestaurantDetailsActivity::class.java)
+        intent.putExtra("PLACE_ID", place_id)
+        startActivity(intent)
+        return true
     }
 
     override fun onFilterApplied() {

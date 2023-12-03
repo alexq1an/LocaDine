@@ -1,15 +1,20 @@
 package com.example.locadine
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ListView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.location.LocationServices
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -125,5 +130,12 @@ object Util {
             4 -> "$$$$"
             else -> "N/A"
         }
+    }
+
+
+    fun resizeIcon(icon: Bitmap, width: Int, height: Int): BitmapDescriptor {
+        val resizeBitmap = Bitmap.createScaledBitmap(icon, width,height, false)
+        val resizeIcon = BitmapDescriptorFactory.fromBitmap(resizeBitmap)
+        return resizeIcon
     }
 }
