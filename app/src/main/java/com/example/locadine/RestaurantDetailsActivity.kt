@@ -34,13 +34,7 @@ import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-
-
-// need rating bar that shows stars for price and rating
-// organize summary to be more readable
-// make reviews scrollable
-// make hours accurate to real store hours
-
+import java.util.Calendar
 
 class RestaurantDetailsActivity : AppCompatActivity() {
     private lateinit var textViewName: TextView
@@ -54,7 +48,6 @@ class RestaurantDetailsActivity : AppCompatActivity() {
     private lateinit var imageView1: ImageView
     private lateinit var imageView2: ImageView
     private lateinit var imageView3: ImageView
-    private lateinit var hoursSpinner: Spinner
     private lateinit var ratingBar: RatingBar
     private val restaurant_name = "Restaurant Name"
     private lateinit var placeId: String
@@ -77,7 +70,6 @@ class RestaurantDetailsActivity : AppCompatActivity() {
 
     private val coroutineScope = MainScope()
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -90,15 +82,12 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         textViewAddress = findViewById(R.id.address_id)
         textViewPhoneNumber = findViewById(R.id.textViewPhoneNumber)
         textViewWebsite = findViewById(R.id.textViewWebsite)
-        hoursSpinner = findViewById(R.id.hoursSpinner)
         restaurantsSummary = findViewById(R.id.textViewSummary)
         favouriteButton = findViewById(R.id.favourite_button)
         ratingBar = findViewById(R.id.ratingBar)
         navigateButton = findViewById(R.id.navigate_button)
         ratingBar.stepSize = 0.5f
         ratingBar.rating = 4f
-
-        //selectedHoursTextView = findViewById(R.id.selectedHoursTextView)
 
         buttonSubmitReview = findViewById(R.id.buttonSubmitReview)
 
@@ -111,7 +100,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         arrayList = ArrayList()
         arrayAdapter = ReviewListAdapter(this, arrayList)
         reviewListView.adapter = arrayAdapter
-
+        Util.setListViewHeightBasedOnChildren(reviewListView)
 
         arrayListGoogle = ArrayList()
         arrayAdapterGoogle = GoogleReviewListAdapter(this, arrayListGoogle)
@@ -119,54 +108,18 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         recyclerView.adapter = arrayAdapterGoogle
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        /*
-        reviewListViewGoogle.adapter = arrayAdapterGoogle
-         */
-
         val retrofit = Util.getGooglePlacesRetrofitInstance()
         googlePlacesAPIService = retrofit.create(GooglePlacesAPIService::class.java)
-
-        // Extract PlaceID from Intent
 
         placeId = intent.getStringExtra("PLACE_ID")!!
 
         restaurantID = intent.getStringExtra("PLACE_ID")!!
         sendRequest(restaurantID)
 
-
-        // this is declared twice?
-        db = FirebaseFirestore.getInstance()
-
         checkIfFavourite()
-        //fetchReviews()
 
-
-        lifecycleScope.launch(Dispatchers.Main) {
-            ArrayAdapter.createFromResource(
-                applicationContext, R.array.days_array,
-                android.R.layout.simple_spinner_item
-            ).also { adapter ->
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                hoursSpinner.adapter = adapter
-            }
-
-
-            hoursSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(
-                    parent: AdapterView<*>?,
-                    view: android.view.View?,
-                    position: Int,
-                    id: Long
-                ) {   }
-
-                override fun onNothingSelected(parent: AdapterView<*>?) {
-                }
-            }
-
-            buttonSubmitReview.setOnClickListener {
-                openAddReviewActivity()
-            }
-
+        buttonSubmitReview.setOnClickListener {
+            openAddReviewActivity()
         }
 
         navigateButton.setOnClickListener {
@@ -211,6 +164,16 @@ class RestaurantDetailsActivity : AppCompatActivity() {
                     textViewPhoneNumber.text = restaurant.formatted_phone_number
                     textViewWebsite.text = "Website : ${restaurant.website}"
 
+                    // Get today's day of the week
+                    val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+                    val daysArray = resources.getStringArray(R.array.days_array) // Ensure this array has days in correct order starting from Sunday
+                    val todayString = daysArray[today - 1]
+
+                    // Find today's opening hours
+                    val openingHoursToday = restaurant.opening_hours?.weekday_text?.find { it.startsWith(todayString) }
+                        ?: "Not available"
+                    findViewById<TextView>(R.id.opening_hours_today).text = openingHoursToday
+
 
                     val photoUrl1 = Util.getPhotoUrl(restaurant.photos!![0].photo_reference)
                     Glide.with(this@RestaurantDetailsActivity)
@@ -249,7 +212,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         })
     }
 
-    fun openAddReviewActivity() {
+    private fun openAddReviewActivity() {
         val intent = Intent(this, AddReviewActivity::class.java)
         println("debug: placeID from detailsActivity: ${placeId}")
         intent.putExtra("PLACE_id", placeId)
@@ -263,10 +226,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         coroutineScope.cancel()
     }
 
-
-
     private fun fetchReviews(restaurantName: String, placeID: String) {
-        Toast.makeText(this, "${textViewName.text}", Toast.LENGTH_SHORT).show()
         db.collection("reviews").whereEqualTo("placeID", placeId).get()
             .addOnCompleteListener(OnCompleteListener {
                 if (it.isSuccessful) {
@@ -275,6 +235,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
                     val sortedReviews = reviews.sortedByDescending { review -> review.createdAt }
                     arrayAdapter.replace(sortedReviews)
                     arrayAdapter.notifyDataSetChanged()
+                    Util.setListViewHeightBasedOnChildren(reviewListView)
                 } else {
                     val errorMessage = it.exception?.message
                     Toast.makeText(
@@ -329,13 +290,11 @@ class RestaurantDetailsActivity : AppCompatActivity() {
                 }
     }
 
-
-
-        private fun getRestaurantSummary(restaurant: RestaurantInfo): String {
+    private fun getRestaurantSummary(restaurant: RestaurantInfo): String {
         var result = ""
 
         //result += "Summary : ${restaurant.types}\n}"
-        result += "Price level: ${restaurant.price_level}\n"
+        result += "Price: ${Util.getPrice(restaurant.price_level)}\n"
         //result += "Phone number: ${restaurant.formatted_phone_number}\n"
         //result += "Website : ${restaurant.website}\n"
         //result += "Name: ${restaurant.name}\n"
@@ -343,8 +302,8 @@ class RestaurantDetailsActivity : AppCompatActivity() {
         result += "Open now : ${restaurant.opening_hours?.open_now}\n"
         //result += "Price level: ${restaurant.price_level}\n"
         //result += "Business status: ${restaurant.business_status}\n"
-        //result += "Average rating: ${restaurant.rating}\n"
-        //result += "Number of ratings: ${restaurant.user_ratings_total}\n"
+        result += "Average rating: ${restaurant.rating}\n"
+        result += "Number of ratings: ${restaurant.user_ratings_total}\n"
         //result += "Address: ${restaurant.vicinity}\n"
 
         return result
@@ -358,7 +317,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
                 "restaurantPicture" to Util.getPhotoUrl(restaurant.photos!![0].photo_reference),
             )
         )
-        favouriteButton.text = "Unfavourite"
+        favouriteButton.text = "Remove as favourite"
         favouriteFlag = true
     }
 
@@ -372,7 +331,7 @@ class RestaurantDetailsActivity : AppCompatActivity() {
                 ref.delete().addOnCompleteListener(this) {
                     if (it.isSuccessful) {
                         Toast.makeText(this, "Removed from favourites!", Toast.LENGTH_SHORT).show()
-                        favouriteButton.text = "Favourite"
+                        favouriteButton.text = "Save as favourite"
                         favouriteFlag = false
                     } else {
                         println("Document not found")
@@ -393,10 +352,10 @@ class RestaurantDetailsActivity : AppCompatActivity() {
             // set unfavourite only if the result is successful and the restaurant exist
             if (it.isSuccessful && !it.result.documents.isEmpty()) {
 
-                favouriteButton.text = "Unfavourite"
+                favouriteButton.text = "Remove as favourite"
                 favouriteFlag = true
             } else {
-                favouriteButton.text = "Favourite"
+                favouriteButton.text = "Save as favourite"
                 favouriteFlag = false
             }
         }
