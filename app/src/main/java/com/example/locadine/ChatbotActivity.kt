@@ -110,7 +110,7 @@ class ChatbotActivity : AppCompatActivity() {
     }
 
     private fun getPrePrompt(): String {
-        return getRestaurantInfo() + getChatHistory() + "Create an answer that uses an average of 50 tokens but if needed you can use a maximum of 150 tokens\n\n"
+        return getRestaurantInfo() + getChatHistory() + "Create an answer that uses an average of 50 tokens but if needed you can use a maximum of 100 tokens\n\n"
     }
 
     private fun getChatHistory(): String {

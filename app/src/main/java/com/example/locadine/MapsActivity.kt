@@ -18,6 +18,7 @@ import com.bumptech.glide.request.transition.Transition
 import com.example.locadine.ViewModels.MapViewModel
 import com.example.locadine.api.GooglePlacesAPIService
 import com.example.locadine.databinding.ActivityMapsBinding
+import com.example.locadine.interfaces.FilterDialogListener
 import com.example.locadine.pojos.NearbySearchResponse
 import com.example.locadine.pojos.RestaurantInfo
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -29,6 +30,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
@@ -39,7 +41,7 @@ import retrofit2.Callback
 import retrofit2.Response
 
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.LocationCallBack, GoogleMap.OnMarkerClickListener {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.LocationCallBack, GoogleMap.OnMarkerClickListener, FilterDialogListener {
 
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityMapsBinding
@@ -58,6 +60,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
     private var currLocation: LatLng? = null
     private var currentMarker: Marker? = null
 
+    private lateinit var googlePlacesAPIService: GooglePlacesAPIService
+
+    private lateinit var chatbotButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,6 +75,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+        chatbotButton = findViewById(R.id.chatbot_button)
+        chatbotButton.setOnClickListener {
+            startActivity(Intent(this, ChatbotActivity::class.java))
+        }
+
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         mapViewModel = MapViewModel(fusedLocationProviderClient)
 
@@ -79,25 +89,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         val retrofit = Util.getGooglePlacesRetrofitInstance()
         googlePlacesAPIService = retrofit.create(GooglePlacesAPIService::class.java)
 
-        findButton = binding.findButton
-        findButton.setOnClickListener() {
-            fetchRestaurants()
-            mapSwitch = binding.mapSwitch
-            mapSwitch.setOnClickListener() {
-                if (mMap.mapType == GoogleMap.MAP_TYPE_NORMAL) {
-                    mMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
-                } else {
-                    mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
-                }
 
+        mapSwitch = binding.mapSwitch
+        mapSwitch.setOnClickListener() {
+            if (mMap.mapType == GoogleMap.MAP_TYPE_NORMAL) {
+                mMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
+            } else {
+                mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
             }
-
-
-
-            // for filter restaurant
-
         }
-
         restaurantList = binding.listButton
         restaurantList.setOnClickListener() {
             val restaurantListDialog = RestaurantListDialog()
@@ -105,13 +105,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
             restaurantListDialog.show(supportFragmentManager, "RestaurantList")
         }
 
+        // for filter restaurant
         val toolbarButton = findViewById<Button>(R.id.restaurant_filter)
         toolbarButton.setOnClickListener {
-            val filterDialog = RestaurantFilterDialog()
-            val bundle = Bundle()
+            val filterDialog = RestaurantFilterDialog(this)
             filterDialog.show(supportFragmentManager, "RestaurantFilter")
         }
     }
+
 
 
     private fun fetchRestaurants() {
@@ -198,7 +199,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
     }
 
     private fun filterByPrice(restaurants: List<RestaurantInfo>, priceLevel: Int): List<RestaurantInfo> {
-        return restaurants.filter { it.price_level?.let { level -> level <= priceLevel } ?: false }
+        return if (priceLevel == -1) {
+            restaurants
+        } else {
+            restaurants.filter { it.price_level == priceLevel }
+        }
     }
 
 
@@ -221,6 +226,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
+        mMap.setOnInfoWindowClickListener {
+            val placeId = it.tag as? String
+            if (placeId != null) {
+                val intent = Intent(this, RestaurantDetailsActivity::class.java)
+                intent.putExtra("PLACE_ID", placeId)
+                startActivity(intent)
+            }
+        }
+
         if (mMap.mapType == null) {
             mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
         }
@@ -252,7 +266,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
 
 
     // This Tracks the device in intervals and marks the location on the map
-    fun locationUpdates() {
+    private fun locationUpdates() {
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -342,6 +356,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
             polylineOptions.color(Color.BLUE).width(20F)
             polyLine = mMap.addPolyline(polylineOptions)
 
+            println("dbg: A Duration: $duration A Distance: $distance")
         }
     }
 
@@ -352,5 +367,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         intent.putExtra("PLACE_ID", place_id)
         startActivity(intent)
         return true
+    }
+
+    override fun onFilterApplied() {
+        fetchRestaurants()
     }
 }

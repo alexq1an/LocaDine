@@ -1,70 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical"
-    tools:context=".MainActivity">
+    android:fillViewport="true"
+    android:background="@drawable/background">
 
-    <TextView
-        android:id="@+id/user_info"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center" />
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="16dp"
+        tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/map_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Map" />
+        <TextView
+            android:id="@+id/user_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="8dp"
+            android:text="User Information"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textColor="#000000" />
 
-    <Button
-        android:id="@+id/main_logout_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Logout" />
+        <Button
+            android:id="@+id/map_button"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="8dp"
+            android:text="Near by restaurants" />
 
-    <Button
-        android:id="@+id/go_to_reviews"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Reviews" />
+        <Button
+            android:id="@+id/favourite_restaurant_button"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="8dp"
+            android:text="My favourites" />
 
-    <Button
-        android:id="@+id/go_to_chatbot_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Chatbot" />
+        <Button
+            style="@style/Widget.MaterialComponents.Button"
+            android:id="@+id/main_logout_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Logout"
+            android:layout_marginTop="8dp"
+            android:layout_marginHorizontal="20dp" />
 
-    <Button
-        android:id="@+id/notification_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Notification" />
-
-    <Button
-        android:id="@+id/demo_find_nearby_restaurants"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Demo Find Nearby Restaurants" />
-
-    <Button
-        android:id="@+id/demo_fetch_specific_restaurant"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Demo Fetch Restaurant By Id" />
-
-    <Button
-        android:id="@+id/restaurant_info_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Restaurant Info Page" />
-
-    <Button
-        android:id="@+id/favourite_restaurant_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Favourites" />
-
-</LinearLayout>
+    </LinearLayout>
+</ScrollView>

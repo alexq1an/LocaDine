@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.RatingBar
+import android.widget.TextView
 import android.widget.Toast
 import com.example.locadine.pojos.Review
 import com.google.android.gms.tasks.OnCompleteListener
@@ -16,7 +17,7 @@ import com.google.firebase.firestore.SetOptions
 import java.util.Date
 
 class AddReviewActivity : AppCompatActivity() {
-    private lateinit var restaurantName: EditText
+    private lateinit var restaurantName: TextView
     private lateinit var review: EditText
     private lateinit var ratingBar: RatingBar
     private lateinit var submitReviewButton: Button
@@ -46,9 +47,8 @@ class AddReviewActivity : AppCompatActivity() {
         }
 
         placeID = intent.getStringExtra("PLACE_id").toString()
-        findViewById<EditText>(R.id.addreview_placeID).setText(placeID)
 
-        findViewById<EditText>(R.id.restaurant_name).setText(intent.getStringExtra("PLACE_name").toString())
+        restaurantName.text = intent.getStringExtra("PLACE_name").toString()
     }
 
     private fun submitReview() {
@@ -72,7 +72,8 @@ class AddReviewActivity : AppCompatActivity() {
                 db.collection("reviews").add(reviewData).addOnCompleteListener(this, OnCompleteListener {
                     if (it.isSuccessful) {
                         Toast.makeText(this, "Review added", Toast.LENGTH_SHORT).show()
-                        val intent = Intent(this, ReviewsActivity::class.java)
+                        val intent = Intent(this, RestaurantDetailsActivity::class.java)
+                        intent.putExtra("PLACE_ID", placeID)
                         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
                         startActivity(intent)
                     } else {

@@ -1,6 +1,7 @@
 package com.example.locadine.adapters
 
 import android.content.Context
+import android.content.Intent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
@@ -8,6 +9,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import com.bumptech.glide.Glide
 import com.example.locadine.R
+import com.example.locadine.RestaurantDetailsActivity
 import com.example.locadine.Util
 import com.example.locadine.pojos.RestaurantInfo
 import org.w3c.dom.Text
@@ -18,7 +20,7 @@ class RestaurantListAdapter(private val context: Context, private var restaurant
     }
 
     override fun getItem(position: Int): Any {
-        return restaurantInfo.get(position)
+        return restaurantInfo[position]
     }
 
     override fun getItemId(position: Int): Long {
@@ -34,25 +36,26 @@ class RestaurantListAdapter(private val context: Context, private var restaurant
         val adapterPrice = view.findViewById<TextView>(R.id.adapter_restaurant_price)
         val adapterOpen = view.findViewById<TextView>(R.id.adapter_restaurant_opening)
 
-        val photoUrl = Util.getPhotoUrl(restaurantInfo.get(position).photos!![0].photo_reference)
+        val photoUrl = Util.getPhotoUrl(restaurantInfo[position].photos!![0].photo_reference)
         Glide.with(view)
             .load(photoUrl)
             .into(adapterImage) // load photo into the image box
 
-        adapterName.text = restaurantInfo.get(position).name
-        adapterRating.text = "Rating: ${restaurantInfo.get(position).rating.toString()}"
-        adapterPrice.text = "Price range: ${restaurantInfo.get(position).price_level.toString()}"
-        adapterOpen.text = "Opening Hour: ${restaurantInfo.get(position).opening_hours.toString()}"
-        // adapterDistance.text = restaurantInfo.get(position).
+        adapterName.text = restaurantInfo[position].name
+        adapterRating.text = "Rating: ${restaurantInfo[position].rating.toString()}"
+        adapterPrice.text = "Price: ${Util.getPrice(restaurantInfo[position].price_level)}"
+        if (restaurantInfo[position].opening_hours?.open_now == true) {
+            adapterOpen.text = "Open now"
+        } else {
+            adapterOpen.text = "Currently closed"
+        }
 
-
-
-
-
-
-
+        view.setOnClickListener {
+            val intent = Intent(context, RestaurantDetailsActivity::class.java)
+            intent.putExtra("PLACE_ID", restaurantInfo[position].place_id)
+            context.startActivity(intent)
+        }
 
         return view
     }
-
 }

@@ -55,12 +55,12 @@
         app:layout_constraintTop_toTopOf="@+id/map" />
 
     <Button
-        android:id="@+id/find_button"
+        android:id="@+id/chatbot_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
         android:gravity="center"
-        android:text="Find Your Restaruant"
+        android:text="Chatbot"
         app:layout_constraintBottom_toBottomOf="@+id/map"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.497"

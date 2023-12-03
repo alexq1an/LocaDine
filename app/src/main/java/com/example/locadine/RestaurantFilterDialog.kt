@@ -1,6 +1,7 @@
 package com.example.locadine
 
 import android.app.Dialog
+import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
 import android.view.View
@@ -9,8 +10,9 @@ import android.widget.Spinner
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
+import com.example.locadine.interfaces.FilterDialogListener
 
-class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener{
+class RestaurantFilterDialog(private val listener: FilterDialogListener) : DialogFragment(), DialogInterface.OnClickListener{
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         // Use the AlertDialog.Builder to set the custom view
         val builder = AlertDialog.Builder(requireContext())
@@ -19,9 +21,6 @@ class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener
 
         builder.setView(view).setTitle("Restaurant Filter")
         builder.setPositiveButton("Apply", this)
-
-
-
 
         val distanceSpinner = view.findViewById<Spinner>(R.id.filter_spinner_distance)
         val ratingSpinner = view.findViewById<Spinner>(R.id.filter_spinner_rating)
@@ -57,7 +56,7 @@ class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener
                 val selectedDistance = resources.getStringArray(R.array.filter_rating)[position]
                 // pass selected rating to the activity
                 FilterSetting.rating = when (selectedDistance){
-                    "0" -> 0.0
+                    "Any" -> 0.0
                     "> 3.5" -> 3.5
                     "> 4.0" -> 4.0
                     "> 4.5" -> 4.5
@@ -76,11 +75,11 @@ class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener
                 val selectedDistance = resources.getStringArray(R.array.filter_price)[position]
                 // pass selected price to the activity
                 FilterSetting.price = when (selectedDistance){
-                    "$" -> 0
-                    "$$" -> 1
-                    "$$$" -> 2
-                    "$$$$" -> 3
-                    "$$$$$" -> 4
+                    "Any" -> -1
+                    "$" -> 1
+                    "$$" -> 2
+                    "$$$" -> 3
+                    "$$$$" -> 4
                     else -> 1
                 }
             }
@@ -94,16 +93,14 @@ class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
-        FilterSetting.updateTrigger = true // set it true for update later
     }
 
 
     override fun onClick(dialog: DialogInterface, item: Int) {
         if (item == DialogInterface.BUTTON_POSITIVE) {
-
             Toast.makeText(activity, "Applied Filters", Toast.LENGTH_LONG).show()
+            listener.onFilterApplied()
         }
-
     }
 
     private fun getSavedDistance(value: Int, arrayId: Int): Int {
@@ -121,7 +118,7 @@ class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener
     private fun getSavedRating(value: Double, arrayId: Int): Int {
         val filterArray = resources.getStringArray(arrayId)
         val stringValue = when (value) {
-            0.0 -> "default"
+            0.0 -> "Any"
             3.5 -> "> 3.5"
             4.0 -> "> 4.0"
             4.5 -> "> 4.5"
@@ -133,11 +130,11 @@ class RestaurantFilterDialog : DialogFragment(), DialogInterface.OnClickListener
     private fun getSavedPrice(value: Int, arrayId: Int): Int {
         val filterArray = resources.getStringArray(arrayId)
         val stringValue = when (value) {
-            0 -> "$"
-            1 -> "$$"
-            2 -> "$$$"
-            3 -> "$$$$"
-            4 -> "$$$$$"
+            -1 -> "Any"
+            1 -> "$"
+            2 -> "$$"
+            3 -> "$$$"
+            4 -> "$$$$"
             else -> 20.0
         }
         return filterArray.indexOf(stringValue)

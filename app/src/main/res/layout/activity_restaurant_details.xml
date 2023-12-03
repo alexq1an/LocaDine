@@ -73,12 +73,11 @@
             android:layout_marginTop="8dp"
             android:text="Phone Number: 123-456-7890"/>
 
-        <Spinner
-            android:id="@+id/hoursSpinner"
+        <TextView
+            android:id="@+id/opening_hours_today"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:entries="@array/days_array"/>
+            android:text="TextView" />
 
         <TextView
             android:id="@+id/textViewWebsite"
@@ -107,7 +106,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="5dp"
-            android:text="Favourite" />
+            android:text="Save as favourite" />
 
         <Button
             android:id="@+id/navigate_button"
@@ -118,20 +117,18 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Firebase Reviews"
+            android:text="In-app Reviews"
             android:layout_margin="20dp"
             android:textSize="24sp"
             android:textStyle="bold"
             android:textColor="#238AC1" />
 
 
-
-
         <ListView
             android:id="@+id/review_list_firebase"
             android:layout_width="match_parent"
             android:layout_height="300dp"
-            android:dividerHeight="10dp" />
+            android:dividerHeight="2dp" />
 
 
         <TextView

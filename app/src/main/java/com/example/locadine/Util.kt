@@ -1,19 +1,25 @@
 package com.example.locadine
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Build
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ListView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.location.LocationServices
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+
 
 object Util {
 
@@ -90,6 +96,40 @@ object Util {
 
     fun getPhotoUrl(photoReference: String): String {
         return "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${BuildConfig.MAPS_API_KEY}"
+    }
+
+    fun setListViewHeightBasedOnChildren(listView: ListView) {
+        val listAdapter = listView.adapter
+            ?: // Adapter is not set yet
+            return
+        var totalHeight = listView.paddingTop + listView.paddingBottom
+        for (i in 0 until listAdapter.count) {
+            val listItem: View = listAdapter.getView(i, null, listView)
+            if (listItem is ViewGroup) {
+                listItem.setLayoutParams(
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                    )
+                )
+            }
+            listItem.measure(0, 0)
+            totalHeight += listItem.measuredHeight
+        }
+        totalHeight += listView.dividerHeight * (listAdapter.count - 1)
+        val params = listView.layoutParams
+        params.height = totalHeight
+        listView.layoutParams = params
+        listView.requestLayout()
+    }
+
+    fun getPrice(level: Int?): String {
+        return when (level) {
+            1 -> "$"
+            2 -> "$$"
+            3 -> "$$$"
+            4 -> "$$$$"
+            else -> "N/A"
+        }
     }
 
 
