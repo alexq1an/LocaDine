@@ -349,7 +349,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         currentMarker = mMap.addMarker(markerOptions)
         currLocation = location
 
-        fetchRestaurants()
 
         navigationCheck(location)
     }
@@ -361,6 +360,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
             val lng = intent.getDoubleExtra("Lng", 0.0)
             getRoute(location, LatLng(lat,lng))
             locationUpdates()
+        } else {
+            fetchRestaurants()
         }
 
     }
