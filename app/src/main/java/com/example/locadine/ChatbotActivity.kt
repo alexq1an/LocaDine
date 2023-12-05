@@ -63,7 +63,7 @@ class ChatbotActivity : AppCompatActivity() {
         val retrofit = Util.getOpenAIRetrofitInstance()
         openAIApiService = retrofit.create(OpenAIApiService::class.java)
 
-        addMessageAndScroll(Message("Hi there, I am a chatbot powered by OpenAI's GTP 3.5 model. " +
+        addMessageAndScroll(Message("Hi there, I am a chatbot powered by OpenAI's GPT 3.5 model. " +
                 "I have access to details of restaurants near you such as name, price level" +
                 ", average rating, and top reviews. Ask me any questions and I'll try my best to answer :)", SenderType.BOT))
     }
