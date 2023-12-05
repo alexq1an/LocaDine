@@ -30,9 +30,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
@@ -240,10 +238,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
-        mMap.setOnCameraIdleListener {
-            resizeIcons()
-        }
-
         if (mMap.mapType == null) {
             mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
         }
@@ -252,34 +246,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapViewModel.Locat
         polylineOptions = PolylineOptions()
 
         getCurrentLocation()
-    }
-
-    private fun resizeIcons() {
-        val currentZoomLevel = mMap.cameraPosition.zoom
-        for (marker in markerMap.keys) {
-            val tag = (marker.tag as? CustomTag) ?: continue
-            if (tag.originalIcon != null) {
-                val newSize = calculateIconSize(currentZoomLevel)
-                val resizedIcon = resizeIcon(tag.originalIcon!!, newSize)
-                marker.setIcon(resizedIcon)
-            }
-        }
-    }
-
-    val BASE_ICON_SIZE = 50 // in pixels
-    val BASE_ZOOM_LEVEL = 10f
-
-    // Function to calculate the icon size based on the current zoom level
-    private fun calculateIconSize(currentZoomLevel: Float): Int {
-        val zoomDifference = currentZoomLevel - BASE_ZOOM_LEVEL
-        // Assuming the icon size doubles with each zoom level increase
-        return (BASE_ICON_SIZE * Math.pow(2.0, zoomDifference.toDouble())).toInt()
-    }
-
-    // Function to resize the icon
-    private fun resizeIcon(originalIcon: Bitmap, size: Int): BitmapDescriptor {
-        val resizedBitmap = Bitmap.createScaledBitmap(originalIcon, size, size, false)
-        return BitmapDescriptorFactory.fromBitmap(resizedBitmap)
     }
 
     //gets the current location of device Once
